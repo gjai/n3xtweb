@@ -1,0 +1,39 @@
+# N3XT Communication - Uploads Directory Security
+# OVH Shared Hosting Compatible Configuration
+
+# Disable directory browsing
+Options -Indexes
+IndexIgnore *
+
+# Block execution of PHP files in uploads directory
+<FilesMatch "\.(php|php3|php4|php5|phtml|pl|py|jsp|asp|sh|cgi)$">
+    Require all denied
+</FilesMatch>
+
+# Block dangerous file types
+<FilesMatch "\.(htaccess|htpasswd|ini|log|sh|sql|conf|fla|psd|log)$">
+    Require all denied
+</FilesMatch>
+
+# Allow only specific safe file types
+<FilesMatch "\.(jpg|jpeg|png|gif|pdf|doc|docx|xls|xlsx|ppt|pptx|txt|zip|rar)$">
+    Require all granted
+</FilesMatch>
+
+# Security headers for uploaded files
+<IfModule mod_headers.c>
+    Header set X-Content-Type-Options nosniff
+    Header set X-Frame-Options DENY
+    Header set Content-Disposition "attachment"
+</IfModule>
+
+# Prevent hotlinking of uploaded files
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteCond %{HTTP_REFERER} !^$
+    RewriteCond %{HTTP_REFERER} !^https?://(www\.)?yourdomain\.com [NC]
+    RewriteRule \.(jpg|jpeg|png|gif|pdf|doc|docx|xls|xlsx|ppt|pptx|zip|rar)$ - [F,L]
+</IfModule>
+
+# Limit file upload size (additional protection)
+LimitRequestBody 52428800
