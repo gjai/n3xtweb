@@ -1059,11 +1059,12 @@ class InstallHelper {
             return $sql;
         }
         
-        // Add prefix to common table names
+        // Add prefix to common table names using word boundaries to avoid partial replacements
         $tables = ['admin_users', 'system_settings', 'access_logs', 'login_attempts', 'logs', 'backups'];
         
         foreach ($tables as $table) {
-            $sql = str_replace($table, $prefix . $table, $sql);
+            // Use word boundaries to ensure we only replace complete table names
+            $sql = preg_replace('/\b' . preg_quote($table, '/') . '\b/', $prefix . $table, $sql);
         }
         
         return $sql;
