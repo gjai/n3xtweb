@@ -83,14 +83,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$isBlocked) {
         Logger::logAccess($username, false, 'Empty credentials');
     }
     else {
-        // For demo purposes, using hardcoded admin credentials
-        // In production, this should check against a database
-        $validUsername = 'admin';
-        $validPasswordHash = '$argon2id$v=19$m=65536,t=4,p=3$c29tZXNhbHQ$X9z7QrLnGQZnFl7tFrBnKg1DjWs5qFzw2yQrGg1DjWs'; // 'admin123'
+        // Check credentials against database
+        try {
+            $db = Database::getInstance();
+            $user = $db->fetchOne(
+                "SELECT id, username, password_hash FROM admin_users WHERE username = ? AND active = 1", 
+                [$username]
+            );
+            
+            if ($user && Security::verifyPassword($password, $user['password_hash'])) {
+                // Update last login time
+                $db->execute(
+                    "UPDATE admin_users SET last_login = NOW() WHERE id = ?", 
+                    [$user['id']]
+                );
+            }
+        } catch (Exception $e) {
+            Logger::log("Database error during login: " . $e->getMessage(), LOG_LEVEL_ERROR, 'access');
+            $user = false;
+        }
         
-        // You can generate the hash using: echo Security::hashPassword('your_password');
-        
-        if ($username === $validUsername && Security::verifyPassword($password, $validPasswordHash)) {
+        if ($user) {
             // Successful login
             Session::login($username);
             Logger::logAccess($username, true, 'Successful login');

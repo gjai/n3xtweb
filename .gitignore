@@ -1,0 +1,38 @@
+# N3XT Communication - Git Ignore
+
+# Log files
+logs/*.log
+*.log
+
+# Backup files
+backups/*.zip
+backups/*.sql
+*.backup.*
+
+# Upload files
+uploads/*
+!uploads/.gitkeep
+
+# Temporary files
+tmp/*
+!tmp/.gitkeep
+
+# System files
+.DS_Store
+Thumbs.db
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Configuration with sensitive data (after installation)
+config/config.local.php
+
+# Session files
+sessions/*
+
+# Cache files
+cache/*
+!cache/.gitkeep
