@@ -1,43 +1,54 @@
-# N3XT Communication - Security Configuration
-# Deny access to sensitive directories and files
+# N3XT Communication - OVH Shared Hosting Compatible Security Configuration
+# Optimized for OVH mutualisé environment
 
-# Disable server signature
-ServerSignature Off
+# Disable server signature (if available)
+<IfModule mod_setenvif.c>
+    ServerSignature Off
+</IfModule>
 
 # Disable directory browsing
 Options -Indexes
+IndexIgnore *
 
-# Protect sensitive directories
-<LocationMatch "^/(admin|backups|logs|config|includes)">
-    Order Deny,Allow
-    Deny from all
-    Allow from 127.0.0.1
-    Allow from ::1
-</LocationMatch>
-
-# Protect log files
-<Files "*.log">
-    Order Deny,Allow
-    Deny from all
-</Files>
-
-# Protect backup files
-<Files "*.sql">
-    Order Deny,Allow
-    Deny from all
-</Files>
+# Protect sensitive files and directories
+# Note: Using FilesMatch instead of LocationMatch for OVH compatibility
 
 # Protect configuration files
-<Files "config.php">
-    Order Deny,Allow
-    Deny from all
-</Files>
+<FilesMatch "^(config\.php|\.env|\.htaccess|\.htpasswd)$">
+    Require all denied
+</FilesMatch>
 
-# Hide .htaccess from users
-<Files ".htaccess">
-    Order Deny,Allow
-    Deny from all
-</Files>
+# Protect log files
+<FilesMatch "\.(log|logs)$">
+    Require all denied
+</FilesMatch>
+
+# Protect backup and database files
+<FilesMatch "\.(sql|bak|backup|old|orig|save|swo|swp|tmp)$">
+    Require all denied
+</FilesMatch>
+
+# Protect development and sensitive files
+<FilesMatch "\.(inc|conf|git|svn|hg|bzr)$">
+    Require all denied
+</FilesMatch>
+
+# Protect sensitive directories using RewriteRule (OVH compatible)
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    
+    # Block access to admin directory for non-localhost
+    RewriteCond %{REQUEST_URI} ^/admin/ [NC]
+    RewriteCond %{REMOTE_ADDR} !^127\.0\.0\.1$
+    RewriteCond %{REMOTE_ADDR} !^::1$
+    RewriteRule ^admin/(?!login\.php|captcha\.php) - [F,L]
+    
+    # Block access to sensitive directories
+    RewriteRule ^(backups|logs|config|includes)/ - [F,L]
+    
+    # Block access to uploads PHP files
+    RewriteRule ^uploads/.*\.php$ - [F,L]
+</IfModule>
 
 # Security headers
 <IfModule mod_headers.c>
@@ -46,10 +57,33 @@ Options -Indexes
     Header always set X-XSS-Protection "1; mode=block"
     Header always set Referrer-Policy "strict-origin-when-cross-origin"
     Header always set Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self';"
+    
+    # Additional security headers for OVH
+    Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains"
+    Header always set Permissions-Policy "geolocation=(), microphone=(), camera=()"
 </IfModule>
 
-# Prevent access to PHP files in sensitive areas
-<FilesMatch "\.(inc|conf|sql|bak)$">
-    Order Deny,Allow
-    Deny from all
-</FilesMatch>
+# Prevent hotlinking
+<IfModule mod_rewrite.c>
+    RewriteCond %{HTTP_REFERER} !^$
+    RewriteCond %{HTTP_REFERER} !^https?://(www\.)?yourdomain\.com [NC]
+    RewriteRule \.(jpg|jpeg|png|gif|webp|css|js)$ - [F,L]
+</IfModule>
+
+# Cache control for static assets
+<IfModule mod_expires.c>
+    ExpiresActive On
+    ExpiresByType text/css "access plus 1 month"
+    ExpiresByType application/javascript "access plus 1 month"
+    ExpiresByType image/png "access plus 1 month"
+    ExpiresByType image/jpg "access plus 1 month"
+    ExpiresByType image/jpeg "access plus 1 month"
+    ExpiresByType image/gif "access plus 1 month"
+</IfModule>
+
+# Compress files for better performance on OVH
+<IfModule mod_deflate.c>
+    SetOutputFilter DEFLATE
+    SetEnvIfNoCase Request_URI \.(?:gif|jpe?g|png)$ no-gzip dont-vary
+    SetEnvIfNoCase Request_URI \.(?:exe|t?gz|zip|bz2|sit|rar)$ no-gzip dont-vary
+</IfModule>
