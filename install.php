@@ -172,6 +172,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         $_SESSION['bo_directory'] = $boDirectory;
                         $_SESSION['admin_username'] = $adminUser;
                         
+                        // Auto-remove install.php for security
+                        try {
+                            if (file_exists(__FILE__)) {
+                                unlink(__FILE__);
+                                Logger::log('Install.php automatically removed after successful installation', LOG_LEVEL_INFO, 'system');
+                            }
+                        } catch (Exception $e) {
+                            Logger::log('Failed to remove install.php: ' . $e->getMessage(), LOG_LEVEL_WARNING, 'system');
+                        }
+                        
                         $step = 6;
                     } else {
                         $error = 'Failed to create admin directory.';

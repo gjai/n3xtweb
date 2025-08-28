@@ -5,6 +5,41 @@ All notable changes to N3XT WEB will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.1.0] - 2024-12-19
+
+### Added
+- **🇫🇷 Complete French Admin Interface**: Fully translated admin panel with French navigation menu
+- **🎨 Enhanced Admin Header**: User avatar, profile information, and French logout functionality
+- **🔧 Interactive Maintenance Mode**: Direct control from admin panel with immediate effect
+- **🏠 Visual Communication Homepage**: Professional front-office designed for communication agencies
+- **🛒 Modular E-commerce**: Completely disableable shop module with conditional navigation
+- **🖼️ Unified Logo System**: fav.png priority across all interfaces (admin, front, maintenance)
+- **📱 Responsive Front Office**: Mobile-optimized layout with professional service presentation
+- **⚙️ Theme Management Structure**: Foundation for customizable front-end themes
+
+### Changed
+- **Admin Navigation**: French menu with Général, Site vitrine, Espace client, Boutique e-commerce, Utilisateurs, Logs
+- **Maintenance Page**: N3XT WEB branded with "Retour prochain" message and French content
+- **Logo Management**: fav.png takes priority over assets/images/logo.png
+- **Error Messages**: All admin error messages translated to French
+- **System Version**: Updated to 2.1.0 to reflect major improvements
+
+### Fixed
+- **Install.php Auto-removal**: Automatically deleted after successful installation for security
+- **Config.php Intrusion Detection**: No longer flagged as unexpected file during updates
+- **GitHub API Error Handling**: Improved error messages in French with better timeout handling
+- **White Page on Logo Upload**: Fixed logo modification process
+- **Maintenance Mode Control**: Now toggleable directly from admin interface
+
+### Technical Details
+- Enhanced file intrusion detection excluding critical system files
+- Improved GitHub API integration with better error reporting
+- French language constants throughout admin interface
+- Auto-removal security feature for installation files
+- Responsive design improvements for mobile admin access
+
+---
+
 ## [2.0.0] - 2024-08-28
 
 ### Added
