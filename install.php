@@ -233,6 +233,8 @@ function createDatabaseTables($dbConfig) {
             username VARCHAR(50) UNIQUE NOT NULL,
             password_hash VARCHAR(255) NOT NULL,
             email VARCHAR(255) NOT NULL,
+            reset_token VARCHAR(64) NULL,
+            reset_token_expiry TIMESTAMP NULL,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             last_login TIMESTAMP NULL,
             active BOOLEAN DEFAULT TRUE
