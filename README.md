@@ -1,6 +1,10 @@
-# N3XT Communication
+# N3XT WEB
 
-A powerful, secure, and responsive content management system with advanced back office capabilities, automated updates, and comprehensive backup solutions.
+A powerful, secure, and responsive web content management system with advanced back office capabilities, automated updates, and comprehensive backup solutions.
+
+**Publisher:** N3XT Communication  
+**Authors:** Julien Gauthier & Copilot  
+**Version:** 2.0.0
 
 ## 🚀 Features
 
@@ -85,7 +89,7 @@ A powerful, secure, and responsive content management system with advanced back 
 
 ### 🏢 OVH Shared Hosting Installation
 
-N3XT Communication is fully optimized for **OVH shared hosting (mutualisé)** with special configurations for maximum compatibility and security.
+N3XT WEB is fully optimized for **OVH shared hosting (mutualisé)** with special configurations for maximum compatibility and security.
 
 #### Prerequisites for OVH
 - OVH shared hosting plan with PHP 8.0+ support
@@ -240,7 +244,7 @@ The system uses MySQL/MariaDB for data storage. Configuration is done during ins
 
 ```php
 define('DB_HOST', 'localhost');
-define('DB_NAME', 'n3xt_communication');
+define('DB_NAME', 'n3xtweb_database');
 define('DB_USER', 'your_db_user');
 define('DB_PASS', 'your_db_password');
 ```
@@ -435,4 +439,4 @@ For support and questions:
 
 ---
 
-**N3XT Communication** - Secure • Responsive • Powerful
+**N3XT WEB** - Secure • Responsive • Powerful

@@ -1,6 +1,6 @@
 <?php
 /**
- * N3XT Communication - Admin Dashboard
+ * N3XT WEB - Admin Dashboard
  * 
  * Main admin panel interface with navigation to all back office modules.
  */
@@ -26,6 +26,83 @@ if (isset($_GET['logout'])) {
 
 $currentPage = $_GET['page'] ?? 'dashboard';
 $csrfToken = Security::generateCSRFToken();
+
+// Handle settings form submissions
+$settingsMessage = '';
+$settingsMessageType = 'info';
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
+    // Verify CSRF token
+    if (!Security::verifyCSRFToken($_POST['csrf_token'] ?? '')) {
+        $settingsMessage = 'Security token mismatch. Please try again.';
+        $settingsMessageType = 'danger';
+    } else {
+        switch ($_POST['action']) {
+            case 'upload_logo':
+                if (isset($_FILES['logo_file']) && $_FILES['logo_file']['error'] === UPLOAD_ERR_OK) {
+                    $uploadFile = $_FILES['logo_file'];
+                    $maxSize = 2 * 1024 * 1024; // 2MB
+                    
+                    // Validate file size
+                    if ($uploadFile['size'] > $maxSize) {
+                        $settingsMessage = 'File size too large. Maximum size is 2MB.';
+                        $settingsMessageType = 'danger';
+                        break;
+                    }
+                    
+                    // Validate file type
+                    $allowedTypes = ['image/png', 'image/jpeg', 'image/gif'];
+                    $finfo = finfo_open(FILEINFO_MIME_TYPE);
+                    $mimeType = finfo_file($finfo, $uploadFile['tmp_name']);
+                    finfo_close($finfo);
+                    
+                    if (!in_array($mimeType, $allowedTypes)) {
+                        $settingsMessage = 'Invalid file type. Only PNG, JPG, and GIF files are allowed.';
+                        $settingsMessageType = 'danger';
+                        break;
+                    }
+                    
+                    // Create assets/images directory if it doesn't exist
+                    $assetsDir = '../assets/images';
+                    if (!is_dir($assetsDir)) {
+                        mkdir($assetsDir, 0755, true);
+                    }
+                    
+                    // Move uploaded file
+                    $logoPath = $assetsDir . '/logo.png';
+                    if (move_uploaded_file($uploadFile['tmp_name'], $logoPath)) {
+                        $settingsMessage = 'Logo uploaded successfully!';
+                        $settingsMessageType = 'success';
+                        Logger::logAccess($_SESSION['admin_username'], true, 'Logo uploaded');
+                    } else {
+                        $settingsMessage = 'Failed to upload logo. Please check file permissions.';
+                        $settingsMessageType = 'danger';
+                    }
+                } else {
+                    $settingsMessage = 'Please select a valid file to upload.';
+                    $settingsMessageType = 'danger';
+                }
+                break;
+                
+            case 'remove_logo':
+                $logoPath = '../assets/images/logo.png';
+                if (file_exists($logoPath)) {
+                    if (unlink($logoPath)) {
+                        $settingsMessage = 'Logo removed successfully!';
+                        $settingsMessageType = 'success';
+                        Logger::logAccess($_SESSION['admin_username'], true, 'Logo removed');
+                    } else {
+                        $settingsMessage = 'Failed to remove logo. Please check file permissions.';
+                        $settingsMessageType = 'danger';
+                    }
+                } else {
+                    $settingsMessage = 'No logo file found to remove.';
+                    $settingsMessageType = 'warning';
+                }
+                break;
+        }
+    }
+}
 
 // Get system status
 $systemInfo = [
@@ -54,13 +131,22 @@ if (file_exists($accessLogFile)) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="robots" content="noindex, nofollow">
     <meta name="referrer" content="no-referrer">
-    <title>N3XT Communication - Admin Panel</title>
+    <title>N3XT WEB - Admin Panel</title>
     <link rel="stylesheet" href="../assets/css/style.css">
 </head>
 <body>
     <div class="container">
         <div class="header">
-            <h1>N3XT Communication Admin Panel</h1>
+            <h1>
+                <?php 
+                $logoPath = '../assets/images/logo.png';
+                if (file_exists($logoPath)): ?>
+                    <img src="<?php echo $logoPath; ?>?v=<?php echo time(); ?>" 
+                         alt="N3XT WEB" 
+                         style="max-width: 40px; max-height: 30px; margin-right: 10px; vertical-align: middle;">
+                <?php endif; ?>
+                N3XT WEB Admin Panel
+            </h1>
             <div style="text-align: center; margin-top: 10px;">
                 <span style="opacity: 0.9;">Welcome, <?php echo htmlspecialchars($_SESSION['admin_username']); ?></span>
                 <a href="?logout=1" style="color: #ecf0f1; margin-left: 20px; text-decoration: none;">Logout</a>
@@ -83,6 +169,11 @@ if (file_exists($accessLogFile)) {
                     <li class="nav-item">
                         <a href="restore.php" class="nav-link">
                             Backup & Restore
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="?page=settings" class="nav-link <?php echo $currentPage === 'settings' ? 'active' : ''; ?>">
+                            Settings
                         </a>
                     </li>
                     <li class="nav-item">
@@ -251,6 +342,97 @@ if (file_exists($accessLogFile)) {
                             <div class="alert alert-warning">
                                 <strong>Note:</strong> Maintenance mode settings are configured in the config.php file. 
                                 To change the maintenance mode status, you need to edit the configuration file directly.
+                            </div>
+                        </div>
+                    </div>
+                    
+                <?php elseif ($currentPage === 'settings'): ?>
+                    <?php if (!empty($settingsMessage)): ?>
+                        <div class="alert alert-<?php echo $settingsMessageType; ?>">
+                            <?php echo htmlspecialchars($settingsMessage); ?>
+                        </div>
+                    <?php endif; ?>
+                    
+                    <div class="card">
+                        <div class="card-header">
+                            <h2 class="card-title">System Settings</h2>
+                        </div>
+                        <div class="card-body">
+                            <div class="alert alert-info">
+                                <strong>Logo Management:</strong> Upload and manage your system logo.
+                            </div>
+                            
+                            <!-- Logo Management Section -->
+                            <div class="card" style="margin-bottom: 20px;">
+                                <div class="card-header">
+                                    <h3 class="card-title">Current Logo</h3>
+                                </div>
+                                <div class="card-body">
+                                    <?php
+                                    $logoPath = '../assets/images/logo.png';
+                                    $logoExists = file_exists($logoPath);
+                                    ?>
+                                    
+                                    <?php if ($logoExists): ?>
+                                        <div style="text-align: center; margin-bottom: 20px;">
+                                            <img src="<?php echo $logoPath; ?>?v=<?php echo time(); ?>" 
+                                                 alt="Current Logo" 
+                                                 style="max-width: 200px; max-height: 100px; border: 1px solid #ddd; padding: 10px; border-radius: 4px;">
+                                        </div>
+                                    <?php else: ?>
+                                        <div style="text-align: center; margin-bottom: 20px;">
+                                            <div style="width: 200px; height: 100px; border: 2px dashed #ddd; margin: 0 auto; display: flex; align-items: center; justify-content: center; color: #999; border-radius: 4px;">
+                                                <span>🚀 N3XT WEB</span>
+                                            </div>
+                                        </div>
+                                    <?php endif; ?>
+                                    
+                                    <form method="POST" enctype="multipart/form-data" style="text-align: center;">
+                                        <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrfToken); ?>">
+                                        <input type="hidden" name="action" value="upload_logo">
+                                        
+                                        <div class="form-group">
+                                            <label for="logo_file" class="form-label">Upload New Logo (PNG, JPG, GIF - Max 2MB)</label>
+                                            <input type="file" 
+                                                   id="logo_file" 
+                                                   name="logo_file" 
+                                                   class="form-control"
+                                                   accept=".png,.jpg,.jpeg,.gif"
+                                                   required>
+                                        </div>
+                                        
+                                        <div class="btn-group">
+                                            <button type="submit" class="btn btn-primary">Upload Logo</button>
+                                            <?php if ($logoExists): ?>
+                                                <button type="submit" name="action" value="remove_logo" class="btn btn-danger" 
+                                                        onclick="return confirm('Are you sure you want to remove the current logo?')">
+                                                    Remove Logo
+                                                </button>
+                                            <?php endif; ?>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                            
+                            <!-- Language Settings Section -->
+                            <div class="card">
+                                <div class="card-header">
+                                    <h3 class="card-title">Language Settings</h3>
+                                </div>
+                                <div class="card-body">
+                                    <div class="alert alert-info">
+                                        <strong>Note:</strong> Language settings are configured during installation. 
+                                        The system supports French and English languages.
+                                    </div>
+                                    
+                                    <p><strong>Available Languages:</strong></p>
+                                    <ul>
+                                        <li>🇫🇷 Français (French) - Default</li>
+                                        <li>🇬🇧 English</li>
+                                    </ul>
+                                    
+                                    <p><em>Language selection is available during the installation process and affects all system messages and interfaces.</em></p>
+                                </div>
                             </div>
                         </div>
                     </div>

@@ -1,6 +1,6 @@
 <?php
 /**
- * N3XT Communication - System Update Module
+ * N3XT WEB - System Update Module
  * 
  * Manual download of latest GitHub release, backup creation, file scanning,
  * and system core replacement with comprehensive logging.
@@ -235,7 +235,7 @@ class BackupCreator {
             // Get all tables
             $tables = $db->fetchAll("SHOW TABLES");
             
-            $sql = "-- N3XT Communication Database Backup\n";
+            $sql = "-- N3XT WEB Database Backup\n";
             $sql .= "-- Generated on " . date('Y-m-d H:i:s') . "\n\n";
             $sql .= "SET FOREIGN_KEY_CHECKS=0;\n\n";
             
@@ -468,13 +468,22 @@ function deleteDirectory($dir) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="robots" content="noindex, nofollow">
     <meta name="referrer" content="no-referrer">
-    <title>N3XT Communication - System Update</title>
+    <title>N3XT WEB - System Update</title>
     <link rel="stylesheet" href="../assets/css/style.css">
 </head>
 <body>
     <div class="container">
         <div class="header">
-            <h1>N3XT Communication</h1>
+            <h1>
+                <?php 
+                $logoPath = '../assets/images/logo.png';
+                if (file_exists($logoPath)): ?>
+                    <img src="<?php echo $logoPath; ?>?v=<?php echo time(); ?>" 
+                         alt="N3XT WEB" 
+                         style="max-width: 40px; max-height: 30px; margin-right: 10px; vertical-align: middle;">
+                <?php endif; ?>
+                N3XT WEB
+            </h1>
             <p style="margin-top: 10px; opacity: 0.9;">System Update Manager</p>
         </div>
         

@@ -1,6 +1,6 @@
 <?php
 /**
- * N3XT Communication - Core Functions
+ * N3XT WEB - Core Functions
  * 
  * This file contains core utility functions used throughout the system.
  */
@@ -451,7 +451,7 @@ class EmailHelper {
     public static function sendMail($to, $subject, $message, $headers = '') {
         $defaultHeaders = "MIME-Version: 1.0\r\n";
         $defaultHeaders .= "Content-type: text/html; charset=UTF-8\r\n";
-        $defaultHeaders .= "From: N3XT Communication <noreply@" . $_SERVER['HTTP_HOST'] . ">\r\n";
+        $defaultHeaders .= "From: N3XT WEB <noreply@" . $_SERVER['HTTP_HOST'] . ">\r\n";
         
         $allHeaders = $defaultHeaders . $headers;
         
@@ -471,14 +471,14 @@ class EmailHelper {
     public static function sendVerificationEmail($email, $code, $language = 'fr') {
         $templates = [
             'fr' => [
-                'subject' => 'N3XT Communication - Code de vérification',
+                'subject' => 'N3XT WEB - Code de vérification',
                 'title' => 'Vérification de votre adresse email',
                 'message' => 'Votre code de vérification est :',
                 'instruction' => 'Veuillez saisir ce code pour continuer l\'installation.',
                 'footer' => 'Ce code expire dans 15 minutes.'
             ],
             'en' => [
-                'subject' => 'N3XT Communication - Verification Code',
+                'subject' => 'N3XT WEB - Verification Code',
                 'title' => 'Email Address Verification',
                 'message' => 'Your verification code is:',
                 'instruction' => 'Please enter this code to continue the installation.',
@@ -501,9 +501,9 @@ class EmailHelper {
         
         $templates = [
             'fr' => [
-                'subject' => 'N3XT Communication - Vos identifiants administrateur',
+                'subject' => 'N3XT WEB - Vos identifiants administrateur',
                 'title' => 'Installation terminée avec succès',
-                'greeting' => 'Félicitations ! N3XT Communication a été installé avec succès.',
+                'greeting' => 'Félicitations ! N3XT WEB a été installé avec succès.',
                 'credentials_title' => 'Vos identifiants administrateur :',
                 'username_label' => 'Nom d\'utilisateur',
                 'password_label' => 'Mot de passe',
@@ -512,9 +512,9 @@ class EmailHelper {
                 'footer' => 'Conservez ces informations en lieu sûr.'
             ],
             'en' => [
-                'subject' => 'N3XT Communication - Your Administrator Credentials',
+                'subject' => 'N3XT WEB - Your Administrator Credentials',
                 'title' => 'Installation completed successfully',
-                'greeting' => 'Congratulations! N3XT Communication has been installed successfully.',
+                'greeting' => 'Congratulations! N3XT WEB has been installed successfully.',
                 'credentials_title' => 'Your administrator credentials:',
                 'username_label' => 'Username',
                 'password_label' => 'Password',
@@ -554,12 +554,12 @@ class EmailHelper {
         <head>
             <meta charset='UTF-8'>
             <meta name='viewport' content='width=device-width, initial-scale=1.0'>
-            <title>N3XT Communication</title>
+            <title>N3XT WEB</title>
         </head>
         <body style='font-family: -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; background: #f5f5f5;'>
             <div style='max-width: 600px; margin: 0 auto; background: white; box-shadow: 0 0 20px rgba(0,0,0,0.1);'>
                 <div style='background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center;'>
-                    <h1 style='margin: 0; font-size: 24px; font-weight: 600;'>N3XT Communication</h1>
+                    <h1 style='margin: 0; font-size: 24px; font-weight: 600;'>N3XT WEB</h1>
                     <p style='margin: 10px 0 0 0; opacity: 0.9;'>{$title}</p>
                 </div>
                 <div style='padding: 30px;'>
@@ -570,7 +570,7 @@ class EmailHelper {
                     <p style='font-size: 14px; color: #7f8c8d; margin: 0;'>{$footer}</p>
                 </div>
                 <div style='background: #2c3e50; color: white; padding: 20px; text-align: center; font-size: 14px;'>
-                    <p style='margin: 0; opacity: 0.8;'>© " . date('Y') . " N3XT Communication. Tous droits réservés.</p>
+                    <p style='margin: 0; opacity: 0.8;'>© " . date('Y') . " N3XT WEB. Tous droits réservés.</p>
                 </div>
             </div>
         </body>
@@ -685,7 +685,7 @@ class LanguageHelper {
     
     private static $translations = [
         'fr' => [
-            'installation_title' => 'Installation de N3XT Communication',
+            'installation_title' => 'Installation de N3XT WEB',
             'welcome' => 'Bienvenue',
             'language_selection' => 'Sélection de la langue',
             'choose_language' => 'Choisissez votre langue',
@@ -714,7 +714,7 @@ class LanguageHelper {
             'maintenance_mode_enabled' => 'Le mode maintenance est activé par défaut.',
         ],
         'en' => [
-            'installation_title' => 'N3XT Communication Installation',
+            'installation_title' => 'N3XT WEB Installation',
             'welcome' => 'Welcome',
             'language_selection' => 'Language Selection',
             'choose_language' => 'Choose your language',
