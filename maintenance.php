@@ -24,12 +24,13 @@ if ($isAdmin && !isset($_GET['preview'])) {
 }
 ?>
 <!DOCTYPE html>
-<html lang="en">
+<html lang="fr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="robots" content="noindex, nofollow">
-    <title>N3XT Communication - Under Maintenance</title>
+    <link rel="icon" type="image/png" href="fav.png">
+    <title>N3XT WEB - Maintenance en cours</title>
     <link rel="stylesheet" href="assets/css/style.css">
     <style>
         body {
@@ -47,10 +48,22 @@ if ($isAdmin && !isset($_GET['preview'])) {
             padding: 40px 20px;
         }
         
-        .maintenance-icon {
-            font-size: 72px;
-            margin-bottom: 30px;
-            opacity: 0.9;
+        .maintenance-logo {
+            width: 120px;
+            height: 120px;
+            margin: 0 auto 30px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+        }
+        
+        .maintenance-logo img {
+            max-width: 80px;
+            max-height: 80px;
+            border-radius: 50%;
         }
         
         .maintenance-title {
@@ -222,36 +235,43 @@ if ($isAdmin && !isset($_GET['preview'])) {
     
     <div class="maintenance-container">
         <div class="maintenance-card">
-            <div class="maintenance-icon">🔧</div>
+            <div class="maintenance-logo">
+                <?php 
+                $logoPath = 'fav.png';
+                if (file_exists($logoPath)): ?>
+                    <img src="<?php echo $logoPath; ?>" alt="N3XT WEB">
+                <?php else: ?>
+                    <span style="font-size: 48px; color: white;">🚀</span>
+                <?php endif; ?>
+            </div>
             
-            <h1 class="maintenance-title">Under Maintenance</h1>
+            <h1 class="maintenance-title">N3XT WEB</h1>
             
             <p class="maintenance-subtitle">
-                We're currently performing scheduled maintenance to improve your experience. 
-                We'll be back online shortly.
+                <strong>Retour prochain</strong>
             </p>
             
             <div class="maintenance-info">
-                <h3>What's Happening?</h3>
+                <h3>Que se passe-t-il ?</h3>
                 <ul>
-                    <li>System updates and security patches</li>
-                    <li>Performance optimizations</li>
-                    <li>Database maintenance</li>
-                    <li>Server improvements</li>
+                    <li>Mise à jour du système et correctifs de sécurité</li>
+                    <li>Optimisations de performance</li>
+                    <li>Maintenance de la base de données</li>
+                    <li>Améliorations du serveur</li>
                 </ul>
                 
-                <h3>Estimated Duration</h3>
+                <h3>Durée estimée</h3>
                 <p>
                     <span class="loading-spinner"></span>
-                    Maintenance is expected to complete within the next few hours.
+                    La maintenance devrait se terminer dans les prochaines heures.
                 </p>
             </div>
             
             <div class="maintenance-contact">
-                <h3>Need Immediate Assistance?</h3>
+                <h3>Besoin d'une assistance immédiate ?</h3>
                 <p>
-                    If you have an urgent matter, please contact us at:<br>
-                    <a href="mailto:support@n3xtcommunication.com">support@n3xtcommunication.com</a>
+                    Si vous avez un problème urgent, veuillez nous contacter à :<br>
+                    <a href="mailto:contact@n3xtweb.fr">contact@n3xtweb.fr</a>
                 </p>
                 
                 <div class="maintenance-social">
@@ -262,21 +282,21 @@ if ($isAdmin && !isset($_GET['preview'])) {
             </div>
             
             <div style="margin-top: 40px; font-size: 14px; opacity: 0.8;">
-                <p>Thank you for your patience!</p>
-                <p><strong>N3XT Communication Team</strong></p>
+                <p>Merci pour votre patience !</p>
+                <p><strong>Équipe N3XT WEB</strong></p>
             </div>
         </div>
     </div>
     
     <script>
-        // Auto-refresh every 5 minutes to check if maintenance is over
+        // Actualisation automatique toutes les 5 minutes pour vérifier si la maintenance est terminée
         setTimeout(function() {
             if (!window.location.href.includes('preview')) {
                 window.location.reload();
             }
         }, 300000); // 5 minutes
         
-        // Add some interactive elements
+        // Ajouter quelques éléments interactifs
         document.addEventListener('DOMContentLoaded', function() {
             // Animate social icons
             const socialLinks = document.querySelectorAll('.maintenance-social a');
