@@ -104,15 +104,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$isBlocked) {
                     // Check credentials against database
                     try {
                         $db = Database::getInstance();
+                        $prefix = Logger::getTablePrefix();
                         $user = $db->fetchOne(
-                            "SELECT id, username, password_hash, email FROM admin_users WHERE username = ? AND active = 1", 
+                            "SELECT id, username, password_hash, email FROM {$prefix}admin_users WHERE username = ? AND active = 1", 
                             [$username]
                         );
                         
                         if ($user && Security::verifyPassword($password, $user['password_hash'])) {
                             // Update last login time
                             $db->execute(
-                                "UPDATE admin_users SET last_login = NOW() WHERE id = ?", 
+                                "UPDATE {$prefix}admin_users SET last_login = NOW() WHERE id = ?", 
                                 [$user['id']]
                             );
                             
@@ -183,8 +184,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$isBlocked) {
                 } else {
                     try {
                         $db = Database::getInstance();
+                        $prefix = Logger::getTablePrefix();
                         $user = $db->fetchOne(
-                            "SELECT id, username, email FROM admin_users WHERE email = ? AND active = 1", 
+                            "SELECT id, username, email FROM {$prefix}admin_users WHERE email = ? AND active = 1", 
                             [$email]
                         );
                         
@@ -195,7 +197,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$isBlocked) {
                             
                             // Save reset token
                             $db->execute(
-                                "UPDATE admin_users SET reset_token = ?, reset_token_expiry = ? WHERE id = ?",
+                                "UPDATE {$prefix}admin_users SET reset_token = ?, reset_token_expiry = ? WHERE id = ?",
                                 [$resetToken, $expiryTime, $user['id']]
                             );
                             
@@ -252,8 +254,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$isBlocked) {
                 } else {
                     try {
                         $db = Database::getInstance();
+                        $prefix = Logger::getTablePrefix();
                         $user = $db->fetchOne(
-                            "SELECT id, username FROM admin_users WHERE reset_token = ? AND reset_token_expiry > NOW() AND active = 1",
+                            "SELECT id, username FROM {$prefix}admin_users WHERE reset_token = ? AND reset_token_expiry > NOW() AND active = 1",
                             [$token]
                         );
                         
@@ -261,7 +264,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$isBlocked) {
                             // Update password
                             $hashedPassword = Security::hashPassword($newPassword);
                             $db->execute(
-                                "UPDATE admin_users SET password_hash = ?, reset_token = NULL, reset_token_expiry = NULL WHERE id = ?",
+                                "UPDATE {$prefix}admin_users SET password_hash = ?, reset_token = NULL, reset_token_expiry = NULL WHERE id = ?",
                                 [$hashedPassword, $user['id']]
                             );
                             
@@ -308,8 +311,9 @@ if ($resetMode) {
     $token = Security::sanitizeInput($_GET['token']);
     try {
         $db = Database::getInstance();
+        $prefix = Logger::getTablePrefix();
         $user = $db->fetchOne(
-            "SELECT id FROM admin_users WHERE reset_token = ? AND reset_token_expiry > NOW() AND active = 1",
+            "SELECT id FROM {$prefix}admin_users WHERE reset_token = ? AND reset_token_expiry > NOW() AND active = 1",
             [$token]
         );
         

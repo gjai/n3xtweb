@@ -54,7 +54,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             
             // Get admin email from database
             $db = Database::getInstance();
-            $admin = $db->fetchOne("SELECT email FROM admin_users WHERE active = 1 LIMIT 1");
+            $prefix = Logger::getTablePrefix();
+            $admin = $db->fetchOne("SELECT email FROM {$prefix}admin_users WHERE active = 1 LIMIT 1");
             
             if ($admin && !empty($admin['email'])) {
                 $subject = "🚨 N3XT WEB - Tentative d'intrusion détectée";

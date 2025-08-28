@@ -264,12 +264,12 @@ class Logger {
                 } elseif (defined('TABLE_PREFIX')) {
                     $prefix = TABLE_PREFIX;
                 } else {
-                    // Try to get from database - check if we can connect first
+                    // Try to get from database - use default prefix to avoid chicken-and-egg problem
                     try {
                         $db = Database::getInstance();
-                        // Try with default prefix first
-                        $result = $db->fetchOne("SELECT setting_value FROM n3xtweb_system_settings WHERE setting_key = 'table_prefix' LIMIT 1");
-                        $prefix = $result ? $result['setting_value'] : 'n3xtweb_';
+                        $defaultPrefix = 'n3xtweb_';
+                        $result = $db->fetchOne("SELECT setting_value FROM {$defaultPrefix}system_settings WHERE setting_key = 'table_prefix' LIMIT 1");
+                        $prefix = $result ? $result['setting_value'] : $defaultPrefix;
                     } catch (Exception $e) {
                         // If database connection fails, fall back to default
                         $prefix = 'n3xtweb_';
@@ -1059,11 +1059,12 @@ class InstallHelper {
             return $sql;
         }
         
-        // Add prefix to common table names
-        $tables = ['admin_users', 'system_settings', 'logs', 'backups'];
+        // Add prefix to common table names using word boundaries to avoid partial replacements
+        $tables = ['admin_users', 'system_settings', 'access_logs', 'login_attempts', 'logs', 'backups'];
         
         foreach ($tables as $table) {
-            $sql = str_replace($table, $prefix . $table, $sql);
+            // Use word boundaries to ensure we only replace complete table names
+            $sql = preg_replace('/\b' . preg_quote($table, '/') . '\b/', $prefix . $table, $sql);
         }
         
         return $sql;
