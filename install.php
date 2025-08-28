@@ -1,6 +1,6 @@
 <?php
 /**
- * N3XT Communication - Modern Installation Interface
+ * N3XT WEB - Modern Installation Interface
  * 
  * Enhanced installation system with email verification, language selection,
  * and modern UI design.
@@ -34,7 +34,7 @@ require_once 'includes/functions.php';
 
 // Define system version if not already defined
 if (!defined('SYSTEM_VERSION')) {
-    define('SYSTEM_VERSION', '1.0.0');
+    define('SYSTEM_VERSION', '2.0.0');
 }
 
 // Get language from session or default to French
@@ -49,7 +49,19 @@ $success = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $step = (int) ($_POST['step'] ?? 1);
     
-    switch ($step) {
+    // Handle back navigation
+    if (isset($_POST['back'])) {
+        $step = max(1, $step - 1);
+        // Clear step-specific session data when going back
+        if ($step == 2) {
+            unset($_SESSION['verification_code']);
+            unset($_SESSION['verification_email']);
+            unset($_SESSION['verification_time']);
+        } elseif ($step == 3) {
+            unset($_SESSION['db_config']);
+        }
+    } else {
+        switch ($step) {
         case 1:
             // Language selection
             $language = $_POST['language'] ?? 'fr';
@@ -172,6 +184,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
             break;
     }
+    }
 }
 
 /**
@@ -182,8 +195,8 @@ function generateConfigFile($dbConfig, $boDirectory) {
     
     $replacements = [
         "'localhost'" => "'{$dbConfig['host']}'",
-        "'n3xt_communication'" => "'{$dbConfig['name']}'",
-        "'n3xt_user'" => "'{$dbConfig['user']}'",
+        "'n3xtweb_database'" => "'{$dbConfig['name']}'",
+        "'n3xtweb_user'" => "'{$dbConfig['user']}'",
         "'secure_password'" => "'{$dbConfig['pass']}'",
         "define('MAINTENANCE_MODE', false);" => "define('MAINTENANCE_MODE', true);", // Enable maintenance mode by default
         "define('ADMIN_PATH', ROOT_PATH . '/admin');" => "define('ADMIN_PATH', ROOT_PATH . '/{$boDirectory}');"
@@ -663,7 +676,7 @@ $allRequirementsMet = !in_array(false, $requirements);
         <div class="install-card fade-in">
             <div class="install-header">
                 <div class="logo">🚀</div>
-                <h1 class="install-title">N3XT Communication</h1>
+                <h1 class="install-title">N3XT WEB</h1>
                 <p class="install-subtitle"><?php echo LanguageHelper::get('installation_title', $language); ?></p>
             </div>
             
@@ -737,9 +750,14 @@ $allRequirementsMet = !in_array(false, $requirements);
                         
                         <form method="POST">
                             <input type="hidden" name="step" value="2">
-                            <button type="submit" class="btn btn-primary btn-block">
-                                <?php echo LanguageHelper::get('next', $language); ?>
-                            </button>
+                            <div class="btn-row">
+                                <button type="submit" name="back" class="btn btn-secondary">
+                                    <?php echo LanguageHelper::get('previous', $language); ?>
+                                </button>
+                                <button type="submit" class="btn btn-primary">
+                                    <?php echo LanguageHelper::get('next', $language); ?>
+                                </button>
+                            </div>
                         </form>
                     <?php else: ?>
                         <div class="alert alert-danger">
@@ -766,9 +784,14 @@ $allRequirementsMet = !in_array(false, $requirements);
                                        required>
                             </div>
                             
-                            <button type="submit" name="send_code" class="btn btn-primary btn-block">
-                                <?php echo LanguageHelper::get('send_code', $language); ?>
-                            </button>
+                            <div class="btn-row">
+                                <button type="submit" name="back" class="btn btn-secondary">
+                                    <?php echo LanguageHelper::get('previous', $language); ?>
+                                </button>
+                                <button type="submit" name="send_code" class="btn btn-primary">
+                                    <?php echo LanguageHelper::get('send_code', $language); ?>
+                                </button>
+                            </div>
                         </form>
                     <?php else: ?>
                         <p><?php echo LanguageHelper::get('email_sent', $language); ?></p>
@@ -786,9 +809,14 @@ $allRequirementsMet = !in_array(false, $requirements);
                                        required>
                             </div>
                             
-                            <button type="submit" name="verify_code" class="btn btn-primary btn-block">
-                                <?php echo LanguageHelper::get('verify_code', $language); ?>
-                            </button>
+                            <div class="btn-row">
+                                <button type="submit" name="back" class="btn btn-secondary">
+                                    <?php echo LanguageHelper::get('previous', $language); ?>
+                                </button>
+                                <button type="submit" name="verify_code" class="btn btn-primary">
+                                    <?php echo LanguageHelper::get('verify_code', $language); ?>
+                                </button>
+                            </div>
                         </form>
                     <?php endif; ?>
                     
@@ -816,7 +844,7 @@ $allRequirementsMet = !in_array(false, $requirements);
                                    id="db_name" 
                                    name="db_name" 
                                    class="form-control"
-                                   value="<?php echo htmlspecialchars($_POST['db_name'] ?? 'n3xt_communication'); ?>"
+                                   value="<?php echo htmlspecialchars($_POST['db_name'] ?? 'n3xtweb_database'); ?>"
                                    required>
                         </div>
                         
@@ -844,12 +872,17 @@ $allRequirementsMet = !in_array(false, $requirements);
                                    id="table_prefix" 
                                    name="table_prefix" 
                                    class="form-control"
-                                   value="<?php echo htmlspecialchars($_POST['table_prefix'] ?? 'n3xt_'); ?>"
-                                   placeholder="n3xt_">
+                                   value="<?php echo htmlspecialchars($_POST['table_prefix'] ?? 'n3xtweb_'); ?>"
+                                   placeholder="n3xtweb_">
                             <div class="form-help"><?php echo LanguageHelper::get('table_prefix_help', $language); ?></div>
                         </div>
                         
-                        <button type="submit" class="btn btn-primary btn-block">Test Connection</button>
+                        <div class="btn-row">
+                            <button type="submit" name="back" class="btn btn-secondary">
+                                <?php echo LanguageHelper::get('previous', $language); ?>
+                            </button>
+                            <button type="submit" class="btn btn-primary">Test Connection</button>
+                        </div>
                     </form>
                     
                 <?php elseif ($step == 5): ?>
@@ -875,9 +908,14 @@ $allRequirementsMet = !in_array(false, $requirements);
                             <strong><?php echo htmlspecialchars($_SESSION['verification_email']); ?></strong>
                         </div>
                         
-                        <button type="submit" class="btn btn-primary btn-block">
-                            <?php echo LanguageHelper::get('finish', $language); ?>
-                        </button>
+                        <div class="btn-row">
+                            <button type="submit" name="back" class="btn btn-secondary">
+                                <?php echo LanguageHelper::get('previous', $language); ?>
+                            </button>
+                            <button type="submit" class="btn btn-primary">
+                                <?php echo LanguageHelper::get('finish', $language); ?>
+                            </button>
+                        </div>
                     </form>
                     
                 <?php elseif ($step == 6): ?>

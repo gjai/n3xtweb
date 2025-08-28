@@ -1,9 +1,12 @@
 <?php
 /**
- * N3XT Communication - Main Index Page
+ * N3XT WEB - Main Index Page
  * 
- * Main entry point for the N3XT Communication system.
+ * Main entry point for the N3XT WEB system.
  */
+
+// Define security constant before including any files
+define('IN_N3XTWEB', true);
 
 // Check if system is installed
 if (!file_exists('config/config.php')) {
@@ -15,7 +18,7 @@ if (!file_exists('config/config.php')) {
 require_once 'config/config.php';
 
 // Additional check: if database config is still default, redirect to install
-if (!defined('DB_HOST') || DB_HOST === 'localhost' && DB_NAME === 'n3xt_communication' && DB_USER === 'n3xt_user') {
+if (!defined('DB_HOST') || DB_HOST === 'localhost' && DB_NAME === 'n3xtweb_database' && DB_USER === 'n3xtweb_user') {
     header('Location: install.php');
     exit;
 }
@@ -49,7 +52,7 @@ if (defined('ADMIN_PATH')) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>N3XT Communication</title>
+    <title>N3XT WEB</title>
     <link rel="stylesheet" href="assets/css/style.css">
     <style>
         body {
@@ -195,7 +198,7 @@ if (defined('ADMIN_PATH')) {
 <body>
     <div class="hero-section">
         <div class="container">
-            <h1 class="hero-title">N3XT Communication</h1>
+            <h1 class="hero-title">N3XT WEB</h1>
             <p class="hero-subtitle">
                 A powerful, secure, and responsive content management system with advanced 
                 back office capabilities, automated updates, and comprehensive backup solutions.
@@ -284,7 +287,7 @@ if (defined('ADMIN_PATH')) {
     <footer style="background: #2c3e50; color: white; padding: 40px 0; text-align: center;">
         <div class="container">
             <p style="margin-bottom: 10px;">
-                <strong>N3XT Communication</strong> v<?php echo SYSTEM_VERSION; ?>
+                <strong>N3XT WEB</strong> v<?php echo SYSTEM_VERSION; ?>
             </p>
             <p style="opacity: 0.7; font-size: 14px;">
                 Secure • Responsive • Powerful

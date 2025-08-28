@@ -1,6 +1,6 @@
 <?php
 /**
- * N3XT Communication - Captcha Generator
+ * N3XT WEB - Captcha Generator
  * 
  * Generates captcha images for security verification.
  */

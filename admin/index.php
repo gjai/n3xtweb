@@ -1,6 +1,6 @@
 <?php
 /**
- * N3XT Communication - Admin Dashboard
+ * N3XT WEB - Admin Dashboard
  * 
  * Main admin panel interface with navigation to all back office modules.
  */
@@ -54,13 +54,13 @@ if (file_exists($accessLogFile)) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="robots" content="noindex, nofollow">
     <meta name="referrer" content="no-referrer">
-    <title>N3XT Communication - Admin Panel</title>
+    <title>N3XT WEB - Admin Panel</title>
     <link rel="stylesheet" href="../assets/css/style.css">
 </head>
 <body>
     <div class="container">
         <div class="header">
-            <h1>N3XT Communication Admin Panel</h1>
+            <h1>N3XT WEB Admin Panel</h1>
             <div style="text-align: center; margin-top: 10px;">
                 <span style="opacity: 0.9;">Welcome, <?php echo htmlspecialchars($_SESSION['admin_username']); ?></span>
                 <a href="?logout=1" style="color: #ecf0f1; margin-left: 20px; text-decoration: none;">Logout</a>

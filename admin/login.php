@@ -1,6 +1,6 @@
 <?php
 /**
- * N3XT Communication - Admin Login
+ * N3XT WEB - Admin Login
  * 
  * Enhanced admin authentication with captcha, rate limiting, and security logging.
  */
@@ -169,13 +169,13 @@ $csrfToken = Security::generateCSRFToken();
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="robots" content="noindex, nofollow">
     <meta name="referrer" content="no-referrer">
-    <title>N3XT Communication - Admin Login</title>
+    <title>N3XT WEB - Admin Login</title>
     <link rel="stylesheet" href="../assets/css/style.css">
 </head>
 <body>
     <div class="container">
         <div class="header">
-            <h1>N3XT Communication</h1>
+            <h1>N3XT WEB</h1>
             <p style="margin-top: 10px; opacity: 0.9;">Admin Panel Access</p>
         </div>
         

@@ -14,8 +14,8 @@ if (!defined('IN_N3XTWEB')) {
 // Database configuration (to be configured during installation)
 // For OVH shared hosting, use the database credentials provided in your OVH control panel
 define('DB_HOST', 'localhost'); // Often 'mysql51-66.perso' or similar for OVH
-define('DB_NAME', 'n3xt_communication'); // Your database name from OVH
-define('DB_USER', 'n3xt_user'); // Your database username from OVH
+define('DB_NAME', 'n3xtweb_database'); // Your database name from OVH
+define('DB_USER', 'n3xtweb_user'); // Your database username from OVH
 define('DB_PASS', 'secure_password'); // Your database password from OVH
 define('DB_CHARSET', 'utf8mb4');
 
@@ -63,7 +63,7 @@ define('GITHUB_REPO', 'n3xtweb');
 define('GITHUB_API_URL', 'https://api.github.com');
 
 // System settings
-define('SYSTEM_VERSION', '1.0.0');
+define('SYSTEM_VERSION', '2.0.0');
 define('MAINTENANCE_MODE', false);
 define('DEBUG_MODE', false);
 

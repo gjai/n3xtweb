@@ -1,6 +1,6 @@
 <?php
 /**
- * N3XT Communication - Backup & Restore Module
+ * N3XT WEB - Backup & Restore Module
  * 
  * Upload ZIP archive with backup.sql, import SQL database, and restore critical files
  * with comprehensive notifications and logging.
@@ -402,13 +402,13 @@ $backups = RestoreManager::listBackups();
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="robots" content="noindex, nofollow">
     <meta name="referrer" content="no-referrer">
-    <title>N3XT Communication - Backup & Restore</title>
+    <title>N3XT WEB - Backup & Restore</title>
     <link rel="stylesheet" href="../assets/css/style.css">
 </head>
 <body>
     <div class="container">
         <div class="header">
-            <h1>N3XT Communication</h1>
+            <h1>N3XT WEB</h1>
             <p style="margin-top: 10px; opacity: 0.9;">Backup & Restore Manager</p>
         </div>
         
