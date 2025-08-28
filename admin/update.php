@@ -44,19 +44,35 @@ class GitHubUpdater {
             'http' => [
                 'method' => 'GET',
                 'header' => [
-                    'User-Agent: N3XT-Communication-Updater/1.0'
+                    'User-Agent: N3XT-WEB-Updater/1.0',
+                    'Accept: application/vnd.github.v3+json'
                 ],
-                'timeout' => 30
+                'timeout' => 30,
+                'ignore_errors' => true
             ]
         ]);
         
         $response = @file_get_contents($url, false, $context);
         
         if ($response === false) {
-            throw new Exception('Failed to fetch release information from GitHub');
+            $error = error_get_last();
+            throw new Exception('Impossible de récupérer les informations de version depuis GitHub: ' . ($error['message'] ?? 'Erreur réseau'));
         }
         
-        return json_decode($response, true);
+        // Check HTTP response code
+        if (isset($http_response_header)) {
+            $status_line = $http_response_header[0];
+            if (strpos($status_line, '200') === false) {
+                throw new Exception('Erreur HTTP lors de la récupération des données GitHub: ' . $status_line);
+            }
+        }
+        
+        $data = json_decode($response, true);
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            throw new Exception('Réponse JSON invalide de GitHub: ' . json_last_error_msg());
+        }
+        
+        return $data;
     }
     
     /**
@@ -131,11 +147,25 @@ class FileScanner {
             '.htaccess',
             'robots.txt',
             'index.php',
-            'README.md'
+            'README.md',
+            'CHANGELOG.md',
+            'maintenance.php',
+            'install.php',
+            'fav.png',
+            '.ovhconfig',
+            'config/config.php'
         ];
         
         foreach ($expectedPatterns as $pattern) {
-            if (strpos($path, $pattern) === 0) {
+            if (strpos($path, $pattern) === 0 || $path === $pattern) {
+                return true;
+            }
+        }
+        
+        // Also check if it's in a critical directory that should be excluded from scanning
+        $excludeDirectories = ['backups', 'logs', 'config', 'uploads'];
+        foreach ($excludeDirectories as $dir) {
+            if (strpos($path, $dir . '/') === 0) {
                 return true;
             }
         }

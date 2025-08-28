@@ -36,7 +36,7 @@ if (isset($blockedIPs[$clientIP])) {
     
     if ($blockTimeRemaining > 0) {
         $isBlocked = true;
-        $error = "IP blocked due to too many failed login attempts. Try again in " . ceil($blockTimeRemaining / 60) . " minutes.";
+        $error = "IP bloquée en raison de trop nombreuses tentatives de connexion échouées. Réessayez dans " . ceil($blockTimeRemaining / 60) . " minutes.";
     } else {
         // Remove expired block
         unset($blockedIPs[$clientIP]);
@@ -121,7 +121,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$isBlocked) {
             exit;
         } else {
             // Failed login
-            $error = 'Invalid username or password.';
+            $error = 'Nom d\'utilisateur ou mot de passe invalide.';
             Logger::logAccess($username, false, 'Invalid credentials');
             
             // Increment attempt counter
@@ -143,7 +143,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$isBlocked) {
                 
                 $isBlocked = true;
                 $blockTimeRemaining = LOGIN_LOCKOUT_TIME;
-                $error = "Too many failed login attempts. IP blocked for " . ($blockTimeRemaining / 60) . " minutes.";
+                $error = "Trop de tentatives de connexion échouées. IP bloquée pendant " . ($blockTimeRemaining / 60) . " minutes.";
                 
                 Logger::log("IP {$clientIP} blocked after {$currentAttempts} failed login attempts", LOG_LEVEL_WARNING, 'access');
             } else {
@@ -163,13 +163,14 @@ if ($showCaptcha) {
 $csrfToken = Security::generateCSRFToken();
 ?>
 <!DOCTYPE html>
-<html lang="en">
+<html lang="fr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="robots" content="noindex, nofollow">
     <meta name="referrer" content="no-referrer">
-    <title>N3XT WEB - Admin Login</title>
+    <link rel="icon" type="image/png" href="../fav.png">
+    <title>N3XT WEB - Connexion Administrateur</title>
     <link rel="stylesheet" href="../assets/css/style.css">
 </head>
 <body>
@@ -177,15 +178,22 @@ $csrfToken = Security::generateCSRFToken();
         <div class="header">
             <h1>
                 <?php 
-                $logoPath = '../assets/images/logo.png';
+                $logoPath = '../fav.png';
                 if (file_exists($logoPath)): ?>
                     <img src="<?php echo $logoPath; ?>?v=<?php echo time(); ?>" 
                          alt="N3XT WEB" 
                          style="max-width: 40px; max-height: 30px; margin-right: 10px; vertical-align: middle;">
-                <?php endif; ?>
+                <?php else:
+                    $logoPath = '../assets/images/logo.png';
+                    if (file_exists($logoPath)): ?>
+                        <img src="<?php echo $logoPath; ?>?v=<?php echo time(); ?>" 
+                             alt="N3XT WEB" 
+                             style="max-width: 40px; max-height: 30px; margin-right: 10px; vertical-align: middle;">
+                    <?php endif; 
+                endif; ?>
                 N3XT WEB
             </h1>
-            <p style="margin-top: 10px; opacity: 0.9;">Admin Panel Access</p>
+            <p style="margin-top: 10px; opacity: 0.9;">Accès au panneau d'administration</p>
         </div>
         
         <div class="main-content">

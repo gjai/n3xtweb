@@ -48,26 +48,89 @@ if (defined('ADMIN_PATH')) {
 }
 ?>
 <!DOCTYPE html>
-<html lang="en">
+<html lang="fr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>N3XT WEB</title>
+    <link rel="icon" type="image/png" href="fav.png">
+    <title>N3XT WEB - Communication Visuelle</title>
     <link rel="stylesheet" href="assets/css/style.css">
     <style>
         body {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: #f8f9fa;
             min-height: 100vh;
+            margin: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
         }
         
+        /* Header */
+        .header {
+            background: white;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        
+        .header-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 20px;
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+            font-size: 24px;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        
+        .logo img {
+            width: 40px;
+            height: 40px;
+            margin-right: 10px;
+        }
+        
+        .main-nav {
+            display: flex;
+            gap: 30px;
+        }
+        
+        .main-nav a {
+            color: #2c3e50;
+            text-decoration: none;
+            font-weight: 500;
+            padding: 10px 0;
+            border-bottom: 2px solid transparent;
+            transition: all 0.3s ease;
+        }
+        
+        .main-nav a:hover,
+        .main-nav a.active {
+            color: #3498db;
+            border-bottom-color: #3498db;
+        }
+        
+        /* Hero Section */
         .hero-section {
-            text-align: center;
-            padding: 100px 0 80px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
+            padding: 80px 0;
+            text-align: center;
+        }
+        
+        .hero-content {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 0 20px;
         }
         
         .hero-title {
-            font-size: 3.5rem;
+            font-size: 3rem;
             font-weight: 700;
             margin-bottom: 20px;
             text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
@@ -77,231 +140,322 @@ if (defined('ADMIN_PATH')) {
             font-size: 1.3rem;
             margin-bottom: 40px;
             opacity: 0.9;
-            max-width: 600px;
-            margin-left: auto;
-            margin-right: auto;
             line-height: 1.6;
         }
         
-        .hero-buttons {
-            display: flex;
-            gap: 20px;
-            justify-content: center;
-            flex-wrap: wrap;
-        }
-        
-        .hero-btn {
-            background: rgba(255, 255, 255, 0.2);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.3);
+        .cta-button {
+            background: #e74c3c;
             color: white;
             padding: 15px 30px;
             border-radius: 50px;
             text-decoration: none;
-            font-weight: 500;
-            transition: all 0.3s ease;
-            display: inline-flex;
-            align-items: center;
-            gap: 10px;
-        }
-        
-        .hero-btn:hover {
-            background: rgba(255, 255, 255, 0.3);
-            transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
-        }
-        
-        .features-section {
-            background: white;
-            padding: 80px 0;
-        }
-        
-        .features-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 40px;
-            margin-top: 60px;
-        }
-        
-        .feature-card {
-            text-align: center;
-            padding: 40px 30px;
-            border-radius: 15px;
-            background: #f8f9fa;
-            transition: all 0.3s ease;
-        }
-        
-        .feature-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-        }
-        
-        .feature-icon {
-            font-size: 3rem;
-            margin-bottom: 20px;
-        }
-        
-        .feature-title {
-            font-size: 1.5rem;
             font-weight: 600;
-            margin-bottom: 15px;
-            color: #2c3e50;
+            font-size: 1.1rem;
+            transition: all 0.3s ease;
+            display: inline-block;
         }
         
-        .feature-description {
-            color: #7f8c8d;
-            line-height: 1.6;
+        .cta-button:hover {
+            background: #c0392b;
+            transform: translateY(-2px);
+        }
+        
+        /* Services Section */
+        .services-section {
+            padding: 80px 0;
+            background: white;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
         }
         
         .section-title {
             text-align: center;
             font-size: 2.5rem;
-            font-weight: 600;
-            margin-bottom: 20px;
+            font-weight: 700;
             color: #2c3e50;
+            margin-bottom: 20px;
         }
         
         .section-subtitle {
             text-align: center;
-            font-size: 1.1rem;
+            font-size: 1.2rem;
             color: #7f8c8d;
+            margin-bottom: 60px;
             max-width: 600px;
-            margin: 0 auto;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        
+        .services-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 40px;
+            margin-top: 40px;
+        }
+        
+        .service-card {
+            background: white;
+            border-radius: 15px;
+            padding: 40px 30px;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease;
+        }
+        
+        .service-card:hover {
+            transform: translateY(-10px);
+        }
+        
+        .service-icon {
+            font-size: 60px;
+            margin-bottom: 20px;
+        }
+        
+        .service-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 15px;
+        }
+        
+        .service-description {
+            color: #7f8c8d;
             line-height: 1.6;
         }
         
+        /* Footer */
+        .footer {
+            background: #2c3e50;
+            color: white;
+            padding: 60px 0 30px;
+        }
+        
+        .footer-content {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 40px;
+            margin-bottom: 40px;
+        }
+        
+        .footer-section h3 {
+            font-size: 1.3rem;
+            margin-bottom: 20px;
+            color: #3498db;
+        }
+        
+        .footer-section p,
+        .footer-section a {
+            color: #bdc3c7;
+            text-decoration: none;
+            line-height: 1.6;
+        }
+        
+        .footer-section a:hover {
+            color: #3498db;
+        }
+        
+        .social-links {
+            display: flex;
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .social-links a {
+            display: inline-block;
+            width: 40px;
+            height: 40px;
+            background: #34495e;
+            border-radius: 50%;
+            text-align: center;
+            line-height: 40px;
+            transition: all 0.3s ease;
+        }
+        
+        .social-links a:hover {
+            background: #3498db;
+            transform: translateY(-2px);
+        }
+        
+        .footer-bottom {
+            text-align: center;
+            padding-top: 30px;
+            border-top: 1px solid #34495e;
+            color: #95a5a6;
+        }
+        
+        /* Responsive */
         @media (max-width: 768px) {
+            .header-content {
+                flex-direction: column;
+                gap: 20px;
+            }
+            
+            .main-nav {
+                gap: 20px;
+            }
+            
             .hero-title {
                 font-size: 2.5rem;
             }
             
-            .hero-subtitle {
-                font-size: 1.1rem;
-            }
-            
-            .hero-buttons {
-                flex-direction: column;
-                align-items: center;
-            }
-            
-            .features-grid {
+            .services-grid {
                 grid-template-columns: 1fr;
-                gap: 30px;
-            }
-            
-            .section-title {
-                font-size: 2rem;
             }
         }
     </style>
 </head>
 <body>
-    <div class="hero-section">
-        <div class="container">
-            <h1 class="hero-title">N3XT WEB</h1>
-            <p class="hero-subtitle">
-                A powerful, secure, and responsive content management system with advanced 
-                back office capabilities, automated updates, and comprehensive backup solutions.
-            </p>
-            <div class="hero-buttons">
-                <a href="<?php echo htmlspecialchars($adminDirectory); ?>/login.php" class="hero-btn">
-                    🔐 Admin Panel
-                </a>
-                <a href="#features" class="hero-btn">
-                    ✨ Learn More
-                </a>
-                <?php if (MAINTENANCE_MODE): ?>
-                    <a href="maintenance.php?preview=1" class="hero-btn">
-                        🔧 Maintenance Preview
-                    </a>
+    <!-- Header -->
+    <header class="header">
+        <div class="header-content">
+            <nav class="main-nav">
+                <a href="index.php" class="active">Accueil</a>
+                <a href="#client-area">Espace Client</a>
+                <a href="#boutique" style="display: none;">Boutique</a>
+                <a href="<?php echo $adminDirectory; ?>/login.php">Connexion</a>
+            </nav>
+            <div class="logo">
+                <?php 
+                $logoPath = 'fav.png';
+                if (file_exists($logoPath)): ?>
+                    <img src="<?php echo $logoPath; ?>" alt="N3XT WEB">
                 <?php endif; ?>
+                N3XT WEB
             </div>
         </div>
-    </div>
+    </header>
     
-    <div id="features" class="features-section">
+    <!-- Hero Section -->
+    <section class="hero-section">
+        <div class="hero-content">
+            <h1 class="hero-title">Communication Visuelle Professionnelle</h1>
+            <p class="hero-subtitle">
+                Créez une identité visuelle forte et percutante pour votre entreprise. 
+                De la conception graphique au développement web, nous donnons vie à vos idées.
+            </p>
+            <a href="#services" class="cta-button">Découvrir nos services</a>
+        </div>
+    </section>
+    
+    <!-- Services Section -->
+    <section id="services" class="services-section">
         <div class="container">
-            <h2 class="section-title">Key Features</h2>
+            <h2 class="section-title">Nos Services</h2>
             <p class="section-subtitle">
-                Everything you need to manage your web communication platform securely and efficiently.
+                Une gamme complète de services pour répondre à tous vos besoins en communication visuelle
             </p>
             
-            <div class="features-grid">
-                <div class="feature-card">
-                    <div class="feature-icon">🔐</div>
-                    <h3 class="feature-title">Enhanced Security</h3>
-                    <p class="feature-description">
-                        Multi-layer security with captcha protection, rate limiting, IP blocking, 
-                        and comprehensive access logging. PDO prepared statements prevent SQL injection.
+            <div class="services-grid">
+                <div class="service-card">
+                    <div class="service-icon">🎨</div>
+                    <h3 class="service-title">Design Graphique</h3>
+                    <p class="service-description">
+                        Création d'identités visuelles, logos, cartes de visite, brochures et supports de communication imprimés.
                     </p>
                 </div>
                 
-                <div class="feature-card">
-                    <div class="feature-icon">🔄</div>
-                    <h3 class="feature-title">Automated Updates</h3>
-                    <p class="feature-description">
-                        Seamless GitHub integration for downloading and applying updates with 
-                        automatic backup creation and file integrity checking.
+                <div class="service-card">
+                    <div class="service-icon">💻</div>
+                    <h3 class="service-title">Développement Web</h3>
+                    <p class="service-description">
+                        Sites web responsives, applications web modernes et solutions e-commerce sur mesure.
                     </p>
                 </div>
                 
-                <div class="feature-card">
-                    <div class="feature-icon">💾</div>
-                    <h3 class="feature-title">Backup & Restore</h3>
-                    <p class="feature-description">
-                        Complete backup and restore functionality with database dumps, 
-                        file archiving, and selective restoration options.
+                <div class="service-card">
+                    <div class="service-icon">📱</div>
+                    <h3 class="service-title">Communication Digitale</h3>
+                    <p class="service-description">
+                        Stratégies de communication numérique, réseaux sociaux et marketing digital.
                     </p>
                 </div>
                 
-                <div class="feature-card">
-                    <div class="feature-icon">📱</div>
-                    <h3 class="feature-title">Mobile-First Design</h3>
-                    <p class="feature-description">
-                        Responsive, mobile-first interface that works perfectly on all devices 
-                        from smartphones to desktop computers.
+                <div class="service-card">
+                    <div class="service-icon">📊</div>
+                    <h3 class="service-title">Branding</h3>
+                    <p class="service-description">
+                        Développement de l'image de marque, charte graphique et positionnement stratégique.
                     </p>
                 </div>
                 
-                <div class="feature-card">
-                    <div class="feature-icon">📊</div>
-                    <h3 class="feature-title">Comprehensive Logging</h3>
-                    <p class="feature-description">
-                        Detailed logging system tracks access attempts, system updates, 
-                        errors, and administrative actions for audit and debugging.
+                <div class="service-card">
+                    <div class="service-icon">🎬</div>
+                    <h3 class="service-title">Contenu Multimédia</h3>
+                    <p class="service-description">
+                        Production vidéo, animation graphique et contenus interactifs pour tous supports.
                     </p>
                 </div>
                 
-                <div class="feature-card">
-                    <div class="feature-icon">⚙️</div>
-                    <h3 class="feature-title">Easy Installation</h3>
-                    <p class="feature-description">
-                        Step-by-step installation wizard with system requirements checking, 
-                        database setup, and initial configuration.
+                <div class="service-card">
+                    <div class="service-icon">🚀</div>
+                    <h3 class="service-title">Conseil & Stratégie</h3>
+                    <p class="service-description">
+                        Accompagnement stratégique et conseil en communication pour optimiser votre impact.
                     </p>
                 </div>
             </div>
         </div>
-    </div>
+    </section>
     
-    <footer style="background: #2c3e50; color: white; padding: 40px 0; text-align: center;">
+    <!-- Footer -->
+    <footer class="footer">
         <div class="container">
-            <p style="margin-bottom: 10px;">
-                <strong>N3XT WEB</strong> v<?php echo SYSTEM_VERSION; ?>
-            </p>
-            <p style="opacity: 0.7; font-size: 14px;">
-                Secure • Responsive • Powerful
-            </p>
-            <?php if (defined('DEBUG_MODE') && DEBUG_MODE): ?>
-                <p style="margin-top: 20px; padding: 10px; background: rgba(231, 76, 60, 0.2); border-radius: 4px; font-size: 12px;">
-                    🔧 Debug Mode Active
-                </p>
-            <?php endif; ?>
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h3>N3XT WEB</h3>
+                    <p>
+                        Votre partenaire en communication visuelle. Nous créons des solutions créatives 
+                        et innovantes pour donner vie à vos projets.
+                    </p>
+                    <div class="social-links">
+                        <a href="#" title="Facebook">📘</a>
+                        <a href="#" title="Twitter">🐦</a>
+                        <a href="#" title="LinkedIn">💼</a>
+                        <a href="#" title="Instagram">📸</a>
+                    </div>
+                </div>
+                
+                <div class="footer-section">
+                    <h3>Services</h3>
+                    <p><a href="#services">Design Graphique</a></p>
+                    <p><a href="#services">Développement Web</a></p>
+                    <p><a href="#services">Communication Digitale</a></p>
+                    <p><a href="#services">Branding</a></p>
+                </div>
+                
+                <div class="footer-section">
+                    <h3>Contact</h3>
+                    <p>📧 contact@n3xtweb.fr</p>
+                    <p>📞 +33 1 23 45 67 89</p>
+                    <p>📍 Paris, France</p>
+                </div>
+                
+                <div class="footer-section">
+                    <h3>Informations légales</h3>
+                    <p><a href="#mentions">Mentions légales</a></p>
+                    <p><a href="#privacy">Politique de confidentialité</a></p>
+                    <p><a href="#terms">Conditions d'utilisation</a></p>
+                    <p><a href="#cookies">Politique des cookies</a></p>
+                </div>
+            </div>
+            
+            <div class="footer-bottom">
+                <p>&copy; <?php echo date('Y'); ?> N3XT WEB. Tous droits réservés. Version <?php echo SYSTEM_VERSION; ?></p>
+                <?php if (defined('DEBUG_MODE') && DEBUG_MODE): ?>
+                    <p style="margin-top: 10px; font-size: 12px; opacity: 0.7;">
+                        🔧 Mode debug actif
+                    </p>
+                <?php endif; ?>
+            </div>
         </div>
     </footer>
     
     <script>
-        // Smooth scrolling for anchor links
+        // Navigation fluide pour les liens d'ancrage
         document.addEventListener('DOMContentLoaded', function() {
             const links = document.querySelectorAll('a[href^="#"]');
             
@@ -319,8 +473,8 @@ if (defined('ADMIN_PATH')) {
                 });
             });
             
-            // Add entrance animations
-            const featureCards = document.querySelectorAll('.feature-card');
+            // Animations d'entrée
+            const serviceCards = document.querySelectorAll('.service-card');
             const observer = new IntersectionObserver(function(entries) {
                 entries.forEach(function(entry, index) {
                     if (entry.isIntersecting) {
@@ -332,7 +486,7 @@ if (defined('ADMIN_PATH')) {
                 });
             });
             
-            featureCards.forEach(function(card) {
+            serviceCards.forEach(function(card) {
                 card.style.opacity = '0';
                 card.style.transform = 'translateY(20px)';
                 card.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
