@@ -52,9 +52,21 @@ if (defined('ADMIN_PATH')) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="N3XT WEB - Solution de communication visuelle moderne et responsive">
+    <meta name="keywords" content="communication, design, web, graphisme">
+    <meta name="author" content="N3XT WEB">
+    
+    <!-- Preload critical resources -->
+    <link rel="preload" href="<?php echo AssetOptimizer::getAssetUrl('assets/css/style.css'); ?>" as="style">
+    <link rel="preload" href="fav.png" as="image">
+    
+    <!-- Security headers -->
+    <meta http-equiv="X-Content-Type-Options" content="nosniff">
+    <meta http-equiv="X-Frame-Options" content="DENY">
+    
     <link rel="icon" type="image/png" href="fav.png">
     <title>N3XT WEB - Communication Visuelle</title>
-    <link rel="stylesheet" href="assets/css/style.css">
+    <link rel="stylesheet" href="<?php echo AssetOptimizer::getAssetUrl('assets/css/style.css'); ?>">
     <style>
         body {
             background: #f8f9fa;
