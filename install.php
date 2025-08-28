@@ -5,6 +5,16 @@
  * Initial system setup with database configuration and admin account creation.
  */
 
+// Enable error reporting for installation debugging
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+
+// Define security constant before including any files
+define('IN_N3XTWEB', true);
+
+// Start session for multi-step installation
+session_start();
+
 // Check if system is already installed
 if (file_exists('config/config.php')) {
     $config = include 'config/config.php';
@@ -80,17 +90,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 try {
                     // Create configuration file
                     $dbConfig = $_SESSION['db_config'];
-                    $configContent = self::generateConfigFile($dbConfig);
+                    $configContent = generateConfigFile($dbConfig);
                     
                     if (!file_put_contents('config/config.php', $configContent)) {
                         throw new Exception('Failed to write configuration file');
                     }
                     
                     // Create database tables
-                    self::createDatabaseTables($dbConfig);
+                    createDatabaseTables($dbConfig);
                     
                     // Create admin user
-                    self::createAdminUser($dbConfig, $adminUser, $adminPass);
+                    createAdminUser($dbConfig, $adminUser, $adminPass);
                     
                     // Create initial directories
                     $dirs = ['backups', 'logs', 'uploads'];

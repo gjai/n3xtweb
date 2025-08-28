@@ -7,7 +7,7 @@
  */
 
 // Prevent direct access
-if (!defined('N3XT_SECURE')) {
+if (!defined('IN_N3XTWEB')) {
     die('Direct access not allowed');
 }
 

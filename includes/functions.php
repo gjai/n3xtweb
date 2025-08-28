@@ -5,6 +5,11 @@
  * This file contains core utility functions used throughout the system.
  */
 
+// Prevent direct access
+if (!defined('IN_N3XTWEB')) {
+    exit('Direct access not allowed');
+}
+
 // Define security constant
 define('N3XT_SECURE', true);
 

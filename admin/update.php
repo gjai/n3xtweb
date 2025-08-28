@@ -6,6 +6,9 @@
  * and system core replacement with comprehensive logging.
  */
 
+// Define security constant before including any files
+define('IN_N3XTWEB', true);
+
 require_once '../includes/functions.php';
 
 // Check authentication
