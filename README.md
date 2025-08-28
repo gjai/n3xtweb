@@ -4,7 +4,7 @@ A powerful, secure, and responsive web content management system with advanced b
 
 **Publisher:** N3XT Communication  
 **Authors:** Julien Gauthier & Copilot  
-**Version:** 2.3.0
+**Version:** 2.3.1
 
 ## 🚀 Features
 
@@ -15,6 +15,8 @@ A powerful, secure, and responsive web content management system with advanced b
 - PDO prepared statements to prevent SQL injection
 - Security headers and CSRF token protection
 - Dynamic security settings configurable from Back Office
+- **Automatic installation cleanup** - Removes security decoys and temporary directories
+- **Database connection diagnostics** - Clear error messages and connection testing
 
 ### 🔄 Automated Updates
 - GitHub integration for downloading latest releases
@@ -82,12 +84,14 @@ A powerful, secure, and responsive web content management system with advanced b
    - Follow the step-by-step installation wizard
    - Configure database settings
    - Create admin account
+   - **Installation automatically cleans up unnecessary directories**
 
 4. **Security Setup** (Important!)
-   - Remove or restrict access to `install.php`
+   - Remove or restrict access to `install.php` (auto-removal attempted)
    - Verify `.htaccess` configuration
    - Enable HTTPS if possible
    - Review security settings
+   - **Fake `/admin` directory and original `/bo` directory are automatically removed**
 
 ### 🏢 OVH Shared Hosting Installation
 
@@ -412,6 +416,10 @@ n3xtweb/
 - Ensure database credentials are correct
 
 **Login Issues**
+- If you encounter database connection errors, use the **"🔧 Tester la connexion BDD"** button on the login form
+- Check database credentials in `config/config.php`
+- Verify database host and database name are correct
+- **Database diagnostic messages** provide specific error codes and suggestions
 - Check if IP is blocked (logs/blocked_ips.json)
 - Verify database connection
 - Clear browser cache and cookies

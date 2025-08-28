@@ -956,6 +956,68 @@ class InstallHelper {
     }
     
     /**
+     * Clean up installation directories after successful setup
+     */
+    public static function cleanupInstallation() {
+        $errors = [];
+        
+        // Remove fake admin directory
+        $adminPath = __DIR__ . '/../admin';
+        if (file_exists($adminPath)) {
+            if (!self::removeDirectory($adminPath)) {
+                $errors[] = 'Failed to remove fake admin directory';
+            } else {
+                Logger::log('Fake admin directory removed successfully', LOG_LEVEL_INFO, 'install');
+            }
+        }
+        
+        // Remove original bo directory (after random BO has been created)
+        $boPath = __DIR__ . '/../bo';
+        if (file_exists($boPath)) {
+            if (!self::removeDirectory($boPath)) {
+                $errors[] = 'Failed to remove original bo directory';
+            } else {
+                Logger::log('Original bo directory removed successfully', LOG_LEVEL_INFO, 'install');
+            }
+        }
+        
+        return ['success' => empty($errors), 'errors' => $errors];
+    }
+    
+    /**
+     * Remove directory recursively
+     */
+    private static function removeDirectory($path) {
+        if (!is_dir($path)) {
+            return false;
+        }
+        
+        try {
+            $iterator = new RecursiveIteratorIterator(
+                new RecursiveDirectoryIterator($path, RecursiveDirectoryIterator::SKIP_DOTS),
+                RecursiveIteratorIterator::CHILD_FIRST
+            );
+            
+            foreach ($iterator as $item) {
+                if ($item->isDir()) {
+                    if (!rmdir($item->getRealPath())) {
+                        return false;
+                    }
+                } else {
+                    if (!unlink($item->getRealPath())) {
+                        return false;
+                    }
+                }
+            }
+            
+            return rmdir($path);
+        } catch (Exception $e) {
+            Logger::log("Error removing directory {$path}: " . $e->getMessage(), LOG_LEVEL_ERROR, 'install');
+            return false;
+        }
+    }
+    
+    /**
      * Copy directory recursively
      */
     private static function copyDirectory($source, $destination) {
