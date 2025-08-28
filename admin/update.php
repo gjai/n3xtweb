@@ -474,7 +474,16 @@ function deleteDirectory($dir) {
 <body>
     <div class="container">
         <div class="header">
-            <h1>N3XT WEB</h1>
+            <h1>
+                <?php 
+                $logoPath = '../assets/images/logo.png';
+                if (file_exists($logoPath)): ?>
+                    <img src="<?php echo $logoPath; ?>?v=<?php echo time(); ?>" 
+                         alt="N3XT WEB" 
+                         style="max-width: 40px; max-height: 30px; margin-right: 10px; vertical-align: middle;">
+                <?php endif; ?>
+                N3XT WEB
+            </h1>
             <p style="margin-top: 10px; opacity: 0.9;">System Update Manager</p>
         </div>
         

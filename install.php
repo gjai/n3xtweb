@@ -675,7 +675,17 @@ $allRequirementsMet = !in_array(false, $requirements);
     <div class="install-container">
         <div class="install-card fade-in">
             <div class="install-header">
-                <div class="logo">🚀</div>
+                <div class="logo">
+                    <?php 
+                    $logoPath = 'assets/images/logo.png';
+                    if (file_exists($logoPath)): ?>
+                        <img src="<?php echo $logoPath; ?>?v=<?php echo time(); ?>" 
+                             alt="N3XT WEB" 
+                             style="max-width: 80px; max-height: 60px;">
+                    <?php else: ?>
+                        🚀
+                    <?php endif; ?>
+                </div>
                 <h1 class="install-title">N3XT WEB</h1>
                 <p class="install-subtitle"><?php echo LanguageHelper::get('installation_title', $language); ?></p>
             </div>
