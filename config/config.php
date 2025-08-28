@@ -12,11 +12,11 @@ if (!defined('IN_N3XTWEB')) {
 }
 
 // Database configuration (to be configured during installation)
-// For OVH shared hosting, use the database credentials provided in your OVH control panel
-define('DB_HOST', 'localhost'); // Often 'mysql51-66.perso' or similar for OVH
-define('DB_NAME', 'n3xtweb_database'); // Your database name from OVH
-define('DB_USER', 'n3xtweb_user'); // Your database username from OVH
-define('DB_PASS', 'secure_password'); // Your database password from OVH
+// Default configuration for nxtxyzylie618 hosting
+define('DB_HOST', 'nxtxyzylie618.mysql.db'); // Default OVH MySQL server
+define('DB_NAME', 'nxtxyzylie618_db'); // Default database name
+define('DB_USER', 'nxtxyzylie618_user'); // Default database username
+define('DB_PASS', 'secure_password'); // Default database password
 define('DB_CHARSET', 'utf8mb4');
 
 // PDO Database Connection Example for OVH Shared Hosting
@@ -49,6 +49,12 @@ define('ADMIN_SESSION_TIMEOUT', 3600); // 1 hour
 define('MAX_LOGIN_ATTEMPTS', 3);
 define('LOGIN_LOCKOUT_TIME', 900); // 15 minutes
 define('CSRF_TOKEN_LIFETIME', 3600);
+
+// Security features configuration (disabled by default, configurable in BO)
+define('ENABLE_CAPTCHA', false); // Can be enabled in BO settings
+define('ENABLE_LOGIN_ATTEMPTS_LIMIT', false); // Can be enabled in BO settings  
+define('ENABLE_IP_BLOCKING', false); // Can be enabled in BO settings
+define('ENABLE_IP_TRACKING', false); // Can be enabled in BO settings
 
 // File paths
 define('ROOT_PATH', dirname(__FILE__));

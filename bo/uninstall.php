@@ -312,9 +312,9 @@ if (!defined(\'IN_N3XTWEB\')) {
 }
 
 // Database configuration (to be configured during installation)
-define(\'DB_HOST\', \'localhost\');
-define(\'DB_NAME\', \'n3xtweb_database\');
-define(\'DB_USER\', \'n3xtweb_user\');
+define(\'DB_HOST\', \'nxtxyzylie618.mysql.db\');
+define(\'DB_NAME\', \'nxtxyzylie618_db\');
+define(\'DB_USER\', \'nxtxyzylie618_user\');
 define(\'DB_PASS\', \'secure_password\');
 define(\'DB_CHARSET\', \'utf8mb4\');
 

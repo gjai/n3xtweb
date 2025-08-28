@@ -208,16 +208,60 @@ class Logger {
     }
     
     /**
-     * Log access attempt
+     * Get table prefix from configuration
+     */
+    public static function getTablePrefix() {
+        static $prefix = null;
+        if ($prefix === null) {
+            try {
+                // Try to get from constant first (during installation)
+                if (defined('TABLE_PREFIX')) {
+                    $prefix = TABLE_PREFIX;
+                } else {
+                    // Try to get from database
+                    $db = Database::getInstance();
+                    $result = $db->fetchOne("SELECT setting_value FROM n3xtweb_system_settings WHERE setting_key = 'table_prefix'");
+                    $prefix = $result ? $result['setting_value'] : 'n3xtweb_';
+                }
+            } catch (Exception $e) {
+                $prefix = 'n3xtweb_'; // Default fallback
+            }
+        }
+        return $prefix;
+    }
+    
+    /**
+     * Log access attempt - now stores in database
      */
     public static function logAccess($username, $success, $notes = '') {
-        $status = $success ? 'SUCCESS' : 'FAILED';
-        $message = "Login attempt - Username: {$username} | Status: {$status}";
-        if ($notes) {
-            $message .= " | Notes: {$notes}";
+        try {
+            $db = Database::getInstance();
+            $ip = $_SERVER['REMOTE_ADDR'] ?? 'unknown';
+            $userAgent = $_SERVER['HTTP_USER_AGENT'] ?? 'unknown';
+            $status = $success ? 'SUCCESS' : 'FAILED';
+            $prefix = self::getTablePrefix();
+            
+            // Store in access_logs table
+            $db->execute(
+                "INSERT INTO {$prefix}access_logs (username, ip_address, user_agent, action, status, notes) VALUES (?, ?, ?, ?, ?, ?)",
+                [$username, $ip, $userAgent, 'login', $status, $notes]
+            );
+            
+            // Also store in login_attempts table for tracking
+            $db->execute(
+                "INSERT INTO {$prefix}login_attempts (ip_address, username, success, failure_reason, user_agent) VALUES (?, ?, ?, ?, ?)",
+                [$ip, $username, $success ? 1 : 0, $success ? null : $notes, $userAgent]
+            );
+            
+        } catch (Exception $e) {
+            // Fallback to file logging if database fails
+            $status = $success ? 'SUCCESS' : 'FAILED';
+            $message = "Login attempt - Username: {$username} | Status: {$status}";
+            if ($notes) {
+                $message .= " | Notes: {$notes}";
+            }
+            self::log($message, LOG_LEVEL_INFO, 'access');
         }
-        
-        self::log($message, LOG_LEVEL_INFO, 'access');
     }
     
     /**
@@ -230,6 +274,106 @@ class Logger {
         }
         
         self::log($message, LOG_LEVEL_INFO, 'update');
+    }
+}
+
+/**
+ * Security settings management
+ */
+class SecuritySettings {
+    
+    /**
+     * Get security setting from database
+     */
+    public static function getSetting($key, $default = false) {
+        try {
+            $db = Database::getInstance();
+            $prefix = Logger::getTablePrefix();
+            $result = $db->fetchOne(
+                "SELECT setting_value FROM {$prefix}system_settings WHERE setting_key = ?",
+                [$key]
+            );
+            return $result ? (bool)$result['setting_value'] : $default;
+        } catch (Exception $e) {
+            return $default;
+        }
+    }
+    
+    /**
+     * Set security setting in database
+     */
+    public static function setSetting($key, $value) {
+        try {
+            $db = Database::getInstance();
+            $prefix = Logger::getTablePrefix();
+            $db->execute(
+                "INSERT INTO {$prefix}system_settings (setting_key, setting_value) VALUES (?, ?) ON DUPLICATE KEY UPDATE setting_value = ?",
+                [$key, $value ? '1' : '0', $value ? '1' : '0']
+            );
+            return true;
+        } catch (Exception $e) {
+            return false;
+        }
+    }
+    
+    /**
+     * Check if captcha is enabled
+     */
+    public static function isCaptchaEnabled() {
+        return self::getSetting('enable_captcha', ENABLE_CAPTCHA);
+    }
+    
+    /**
+     * Check if login attempts limit is enabled
+     */
+    public static function isLoginAttemptsLimitEnabled() {
+        return self::getSetting('enable_login_attempts_limit', ENABLE_LOGIN_ATTEMPTS_LIMIT);
+    }
+    
+    /**
+     * Check if IP blocking is enabled
+     */
+    public static function isIpBlockingEnabled() {
+        return self::getSetting('enable_ip_blocking', ENABLE_IP_BLOCKING);
+    }
+    
+    /**
+     * Check if IP tracking is enabled
+     */
+    public static function isIpTrackingEnabled() {
+        return self::getSetting('enable_ip_tracking', ENABLE_IP_TRACKING);
+    }
+    
+    /**
+     * Get max login attempts from database or config
+     */
+    public static function getMaxLoginAttempts() {
+        try {
+            $db = Database::getInstance();
+            $prefix = Logger::getTablePrefix();
+            $result = $db->fetchOne(
+                "SELECT setting_value FROM {$prefix}system_settings WHERE setting_key = 'max_login_attempts'"
+            );
+            return $result ? (int)$result['setting_value'] : MAX_LOGIN_ATTEMPTS;
+        } catch (Exception $e) {
+            return MAX_LOGIN_ATTEMPTS;
+        }
+    }
+    
+    /**
+     * Get login lockout time from database or config  
+     */
+    public static function getLoginLockoutTime() {
+        try {
+            $db = Database::getInstance();
+            $prefix = Logger::getTablePrefix();
+            $result = $db->fetchOne(
+                "SELECT setting_value FROM {$prefix}system_settings WHERE setting_key = 'login_lockout_time'"
+            );
+            return $result ? (int)$result['setting_value'] : LOGIN_LOCKOUT_TIME;
+        } catch (Exception $e) {
+            return LOGIN_LOCKOUT_TIME;
+        }
     }
 }
 

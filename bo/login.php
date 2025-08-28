@@ -25,46 +25,50 @@ $blockTimeRemaining = 0;
 $forgotPasswordMode = isset($_GET['forgot']) && $_GET['forgot'] === '1';
 $resetMode = isset($_GET['reset']) && !empty($_GET['token']);
 
-// Check if IP is currently blocked
+// Check if IP is currently blocked (only if IP blocking is enabled)
 $clientIP = $_SERVER['REMOTE_ADDR'] ?? 'unknown';
 $blockFile = LOG_PATH . '/blocked_ips.json';
 $blockedIPs = [];
+$isBlocked = false;
+$blockTimeRemaining = 0;
 
-if (file_exists($blockFile)) {
+if (SecuritySettings::isIpBlockingEnabled() && file_exists($blockFile)) {
     $blockedIPs = json_decode(file_get_contents($blockFile), true) ?: [];
-}
-
-if (isset($blockedIPs[$clientIP])) {
-    $blockTime = $blockedIPs[$clientIP]['time'];
-    $blockTimeRemaining = ($blockTime + LOGIN_LOCKOUT_TIME) - time();
     
-    if ($blockTimeRemaining > 0) {
-        $isBlocked = true;
-        $error = "IP bloquée en raison de trop nombreuses tentatives de connexion échouées. Réessayez dans " . ceil($blockTimeRemaining / 60) . " minutes.";
-    } else {
-        // Remove expired block
-        unset($blockedIPs[$clientIP]);
-        file_put_contents($blockFile, json_encode($blockedIPs));
+    if (isset($blockedIPs[$clientIP])) {
+        $blockTime = $blockedIPs[$clientIP]['time'];
+        $lockoutTime = SecuritySettings::getLoginLockoutTime();
+        $blockTimeRemaining = ($blockTime + $lockoutTime) - time();
+        
+        if ($blockTimeRemaining > 0) {
+            $isBlocked = true;
+            $error = "IP bloquée en raison de trop nombreuses tentatives de connexion échouées. Réessayez dans " . ceil($blockTimeRemaining / 60) . " minutes.";
+        } else {
+            // Remove expired block
+            unset($blockedIPs[$clientIP]);
+            file_put_contents($blockFile, json_encode($blockedIPs));
+        }
     }
 }
 
-// Get current attempt count
+// Get current attempt count (only if attempts limiting is enabled)
 $attemptFile = LOG_PATH . '/login_attempts.json';
 $attempts = [];
+$currentAttempts = 0;
 
-if (file_exists($attemptFile)) {
+if (SecuritySettings::isLoginAttemptsLimitEnabled() && file_exists($attemptFile)) {
     $attempts = json_decode(file_get_contents($attemptFile), true) ?: [];
+    $currentAttempts = $attempts[$clientIP]['count'] ?? 0;
+    $lastAttemptTime = $attempts[$clientIP]['time'] ?? 0;
+
+    // Reset attempts if more than an hour has passed
+    if (time() - $lastAttemptTime > 3600) {
+        $currentAttempts = 0;
+    }
 }
 
-$currentAttempts = $attempts[$clientIP]['count'] ?? 0;
-$lastAttemptTime = $attempts[$clientIP]['time'] ?? 0;
-
-// Reset attempts if more than an hour has passed
-if (time() - $lastAttemptTime > 3600) {
-    $currentAttempts = 0;
-}
-
-// Show captcha after first failed attempt
+// Show captcha after first failed attempt (only if captcha is enabled)
+$showCaptcha = SecuritySettings::isCaptchaEnabled() && $currentAttempts > 0;
 $showCaptcha = $currentAttempts > 0;
 
 // Handle form submission
@@ -133,17 +137,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$isBlocked) {
                             ];
                             file_put_contents($attemptFile, json_encode($attempts));
                             
-                            // Block IP after max attempts
-                            if ($currentAttempts >= MAX_LOGIN_ATTEMPTS) {
+                            // Block IP after max attempts (only if IP blocking is enabled)
+                            $maxAttempts = SecuritySettings::getMaxLoginAttempts();
+                            if (SecuritySettings::isIpBlockingEnabled() && $currentAttempts >= $maxAttempts) {
                                 $blockedIPs[$clientIP] = ['time' => time()];
                                 file_put_contents($blockFile, json_encode($blockedIPs));
                                 $isBlocked = true;
-                                $error = "Trop de tentatives échouées. IP bloquée pour " . (LOGIN_LOCKOUT_TIME / 60) . " minutes.";
+                                $lockoutTime = SecuritySettings::getLoginLockoutTime();
+                                $error = "Trop de tentatives échouées. IP bloquée pour " . ($lockoutTime / 60) . " minutes.";
                                 Logger::log("IP {$clientIP} blocked after {$currentAttempts} failed login attempts", LOG_LEVEL_WARNING, 'access');
                             } else {
-                                $showCaptcha = true;
-                                $remainingAttempts = MAX_LOGIN_ATTEMPTS - $currentAttempts;
-                                $error .= " {$remainingAttempts} tentatives restantes avant blocage.";
+                                $showCaptcha = SecuritySettings::isCaptchaEnabled();
+                                $remainingAttempts = $maxAttempts - $currentAttempts;
+                                if (SecuritySettings::isLoginAttemptsLimitEnabled()) {
+                                    $error .= " {$remainingAttempts} tentatives restantes avant blocage.";
+                                }
                             }
                         }
                     } catch (Exception $e) {
@@ -522,10 +530,14 @@ $csrfToken = Security::generateCSRFToken();
                     
                     <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #ecf0f1; font-size: 12px; color: #7f8c8d; text-align: center;">
                         <p><strong>Sécurité:</strong></p>
-                        <p>• Maximum <?php echo MAX_LOGIN_ATTEMPTS; ?> tentatives de connexion autorisées</p>
-                        <p>• Compte bloqué pendant <?php echo LOGIN_LOCKOUT_TIME / 60; ?> minutes après échec</p>
+                        <?php if (SecuritySettings::isLoginAttemptsLimitEnabled()): ?>
+                            <p>• Maximum <?php echo SecuritySettings::getMaxLoginAttempts(); ?> tentatives de connexion autorisées</p>
+                        <?php endif; ?>
+                        <?php if (SecuritySettings::isIpBlockingEnabled()): ?>
+                            <p>• Compte bloqué pendant <?php echo SecuritySettings::getLoginLockoutTime() / 60; ?> minutes après échec</p>
+                        <?php endif; ?>
                         <p>• Toutes les tentatives d'accès sont enregistrées</p>
-                        <?php if ($currentAttempts > 0 && !$isBlocked): ?>
+                        <?php if ($currentAttempts > 0 && !$isBlocked && SecuritySettings::isLoginAttemptsLimitEnabled()): ?>
                             <p style="color: #e74c3c; font-weight: bold;">
                                 ⚠️ <?php echo $currentAttempts; ?> tentative(s) échouée(s)
                             </p>
