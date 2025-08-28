@@ -527,13 +527,38 @@ class EmailHelper {
         $template = $templates[$language] ?? $templates['fr'];
         
         $credentialsHtml = "
-            <div style='background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0; font-family: monospace;'>
-                <p><strong>{$template['username_label']}:</strong> {$username}</p>
-                <p><strong>{$template['password_label']}:</strong> {$password}</p>
-                <p><strong>{$template['admin_panel_label']}:</strong> <a href='{$adminUrl}'>{$adminUrl}</a></p>
+            <div style='background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); padding: 25px; border-radius: 12px; margin: 25px 0; border: 1px solid #dee2e6; box-shadow: 0 2px 10px rgba(0,0,0,0.05);'>
+                <div style='display: flex; align-items: center; margin-bottom: 15px;'>
+                    <span style='font-size: 20px; margin-right: 10px;'>🔐</span>
+                    <h3 style='margin: 0; color: #2c3e50; font-size: 18px;'>Identifiants d'accès</h3>
+                </div>
+                <table style='width: 100%; border-collapse: collapse; font-family: \"Courier New\", monospace;'>
+                    <tr style='border-bottom: 1px solid #dee2e6;'>
+                        <td style='padding: 12px 0; font-weight: bold; color: #495057; width: 40%;'>{$template['username_label']}:</td>
+                        <td style='padding: 12px 0; background: #ffffff; padding-left: 15px; border-radius: 4px; color: #2c3e50; font-weight: 600;'>{$username}</td>
+                    </tr>
+                    <tr style='border-bottom: 1px solid #dee2e6;'>
+                        <td style='padding: 12px 0; font-weight: bold; color: #495057;'>{$template['password_label']}:</td>
+                        <td style='padding: 12px 0; background: #ffffff; padding-left: 15px; border-radius: 4px; color: #2c3e50; font-weight: 600;'>{$password}</td>
+                    </tr>
+                    <tr>
+                        <td style='padding: 12px 0; font-weight: bold; color: #495057;'>{$template['admin_panel_label']}:</td>
+                        <td style='padding: 12px 0;'>
+                            <a href='{$adminUrl}' style='background: linear-gradient(135deg, #667eea, #764ba2); color: white; padding: 8px 16px; text-decoration: none; border-radius: 6px; font-weight: 500; display: inline-block;'>
+                                🚀 Accéder au panneau
+                            </a>
+                        </td>
+                    </tr>
+                </table>
             </div>
-            <div style='background: #fff3cd; border: 1px solid #ffeaa7; padding: 15px; border-radius: 8px; margin: 20px 0;'>
-                <p style='margin: 0; color: #856404;'><strong>⚠️ {$template['security_note']}</strong></p>
+            <div style='background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%); border: 1px solid #ffeaa7; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #f39c12;'>
+                <div style='display: flex; align-items: center;'>
+                    <span style='font-size: 24px; margin-right: 10px;'>⚠️</span>
+                    <div>
+                        <p style='margin: 0; color: #856404; font-weight: bold; font-size: 16px;'>Recommandation de sécurité</p>
+                        <p style='margin: 5px 0 0 0; color: #856404; font-size: 14px;'>{$template['security_note']}</p>
+                    </div>
+                </div>
             </div>
         ";
         
@@ -543,10 +568,14 @@ class EmailHelper {
     }
     
     /**
-     * Get email HTML template
+     * Get email HTML template with enhanced styling and logo
      */
     private static function getEmailTemplate($title, $message, $code = '', $instruction = '', $footer = '') {
         $codeHtml = $code ? "<div style='background: #3498db; color: white; font-size: 24px; font-weight: bold; padding: 20px; text-align: center; border-radius: 8px; margin: 20px 0; letter-spacing: 2px;'>{$code}</div>" : '';
+        
+        // Get logo URL
+        $logoUrl = 'https://' . $_SERVER['HTTP_HOST'] . '/fav.png';
+        $logoHtml = "<img src='{$logoUrl}' alt='N3XT WEB' style='width: 40px; height: 40px; margin-bottom: 10px;'>";
         
         return "
         <!DOCTYPE html>
@@ -554,25 +583,68 @@ class EmailHelper {
         <head>
             <meta charset='UTF-8'>
             <meta name='viewport' content='width=device-width, initial-scale=1.0'>
-            <title>N3XT WEB</title>
+            <title>N3XT WEB - {$title}</title>
+            <style>
+                @media only screen and (max-width: 600px) {
+                    .container { width: 100% !important; margin: 0 !important; }
+                    .header { padding: 20px !important; }
+                    .content { padding: 20px !important; }
+                }
+            </style>
         </head>
-        <body style='font-family: -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; background: #f5f5f5;'>
-            <div style='max-width: 600px; margin: 0 auto; background: white; box-shadow: 0 0 20px rgba(0,0,0,0.1);'>
-                <div style='background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center;'>
-                    <h1 style='margin: 0; font-size: 24px; font-weight: 600;'>N3XT WEB</h1>
-                    <p style='margin: 10px 0 0 0; opacity: 0.9;'>{$title}</p>
-                </div>
-                <div style='padding: 30px;'>
-                    <p style='font-size: 16px; margin-bottom: 20px;'>{$message}</p>
-                    {$codeHtml}
-                    <p style='margin: 20px 0;'>{$instruction}</p>
-                    <hr style='border: none; border-top: 1px solid #ecf0f1; margin: 30px 0;'>
-                    <p style='font-size: 14px; color: #7f8c8d; margin: 0;'>{$footer}</p>
-                </div>
-                <div style='background: #2c3e50; color: white; padding: 20px; text-align: center; font-size: 14px;'>
-                    <p style='margin: 0; opacity: 0.8;'>© " . date('Y') . " N3XT WEB. Tous droits réservés.</p>
-                </div>
-            </div>
+        <body style='font-family: -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; background: #f5f5f5;'>
+            <table cellpadding='0' cellspacing='0' border='0' width='100%' style='background: #f5f5f5; min-height: 100vh;'>
+                <tr>
+                    <td align='center' style='padding: 20px;'>
+                        <table class='container' cellpadding='0' cellspacing='0' border='0' style='max-width: 600px; margin: 0 auto; background: white; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); overflow: hidden;'>
+                            <!-- Header -->
+                            <tr>
+                                <td class='header' style='background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 40px 30px; text-align: center;'>
+                                    {$logoHtml}
+                                    <h1 style='margin: 0; font-size: 28px; font-weight: 600;'>N3XT WEB</h1>
+                                    <p style='margin: 10px 0 0 0; opacity: 0.9; font-size: 16px;'>{$title}</p>
+                                </td>
+                            </tr>
+                            <!-- Content -->
+                            <tr>
+                                <td class='content' style='padding: 40px 30px;'>
+                                    <p style='font-size: 16px; margin-bottom: 20px; color: #2c3e50;'>{$message}</p>
+                                    {$codeHtml}
+                                    <p style='margin: 20px 0; color: #34495e; font-size: 15px;'>{$instruction}</p>
+                                    
+                                    <!-- Call to Action -->
+                                    <div style='text-align: center; margin: 30px 0;'>
+                                        <div style='background: #ecf0f1; padding: 15px; border-radius: 8px; border-left: 4px solid #3498db;'>
+                                            <p style='margin: 0; font-size: 14px; color: #2c3e50;'>
+                                                <strong>🔒 Sécurité:</strong> Ce message contient des informations sensibles. Ne le transférez pas.
+                                            </p>
+                                        </div>
+                                    </div>
+                                    
+                                    <hr style='border: none; border-top: 1px solid #ecf0f1; margin: 30px 0;'>
+                                    <p style='font-size: 14px; color: #7f8c8d; margin: 0;'>{$footer}</p>
+                                </td>
+                            </tr>
+                            <!-- Footer -->
+                            <tr>
+                                <td style='background: #2c3e50; color: white; padding: 25px 30px; text-align: center;'>
+                                    <p style='margin: 0 0 10px 0; font-size: 14px; opacity: 0.9;'>
+                                        <strong>N3XT WEB</strong> - Solution web professionnelle
+                                    </p>
+                                    <p style='margin: 0; font-size: 12px; opacity: 0.7;'>
+                                        © " . date('Y') . " N3XT Communication. Tous droits réservés.
+                                    </p>
+                                    <div style='margin-top: 15px; padding-top: 15px; border-top: 1px solid rgba(255,255,255,0.1);'>
+                                        <p style='margin: 0; font-size: 11px; opacity: 0.6;'>
+                                            Cet email a été envoyé automatiquement, veuillez ne pas y répondre.
+                                        </p>
+                                    </div>
+                                </td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+            </table>
         </body>
         </html>";
     }

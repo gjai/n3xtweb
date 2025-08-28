@@ -462,28 +462,94 @@ if (file_exists($accessLogFile)) {
                 <?php elseif ($currentPage === 'client-area'): ?>
                     <div class="card">
                         <div class="card-header">
-                            <h2 class="card-title">Espace client</h2>
+                            <h2 class="card-title">Espace Pro</h2>
                         </div>
                         <div class="card-body">
                             <div class="alert alert-info">
-                                <strong>Gestion de l'espace client</strong><br>
-                                Configurez l'accès et les fonctionnalités disponibles pour vos clients.
+                                <strong>Gestion de l'espace professionnel</strong><br>
+                                Configurez l'accès et les fonctionnalités disponibles pour vos clients professionnels.
+                            </div>
+                            
+                            <!-- Configuration de redirection -->
+                            <div class="card mb-4">
+                                <div class="card-header">
+                                    <h3>Configuration de redirection</h3>
+                                </div>
+                                <div class="card-body">
+                                    <?php if (isset($_POST['update_pro_space_config'])): ?>
+                                        <?php if (Security::verifyCSRFToken($_POST['csrf_token'] ?? '')): ?>
+                                            <?php
+                                            $proSpaceUrl = Security::sanitizeInput($_POST['pro_space_url'] ?? '');
+                                            $enableRedirect = isset($_POST['enable_redirect']) ? 1 : 0;
+                                            
+                                            // Save to config file or database
+                                            $configFile = '../config/pro_space.php';
+                                            $config = "<?php\n// Espace Pro Configuration\ndefine('PRO_SPACE_URL', '{$proSpaceUrl}');\ndefine('PRO_SPACE_REDIRECT_ENABLED', {$enableRedirect});\n?>";
+                                            file_put_contents($configFile, $config);
+                                            ?>
+                                            <div class="alert alert-success">Configuration mise à jour avec succès.</div>
+                                        <?php else: ?>
+                                            <div class="alert alert-error">Erreur de token de sécurité.</div>
+                                        <?php endif; ?>
+                                    <?php endif; ?>
+                                    
+                                    <?php
+                                    // Load current configuration
+                                    $proSpaceUrl = 'client.n3xt.xyz';
+                                    $enableRedirect = false;
+                                    $configFile = '../config/pro_space.php';
+                                    if (file_exists($configFile)) {
+                                        include $configFile;
+                                        if (defined('PRO_SPACE_URL')) $proSpaceUrl = PRO_SPACE_URL;
+                                        if (defined('PRO_SPACE_REDIRECT_ENABLED')) $enableRedirect = PRO_SPACE_REDIRECT_ENABLED;
+                                    }
+                                    ?>
+                                    
+                                    <form method="POST">
+                                        <input type="hidden" name="csrf_token" value="<?php echo $csrfToken; ?>">
+                                        <input type="hidden" name="update_pro_space_config" value="1">
+                                        
+                                        <div class="form-group">
+                                            <label for="pro_space_url" class="form-label">URL de l'espace pro</label>
+                                            <input type="url" 
+                                                   id="pro_space_url" 
+                                                   name="pro_space_url" 
+                                                   class="form-control"
+                                                   value="<?php echo htmlspecialchars($proSpaceUrl); ?>"
+                                                   placeholder="https://client.n3xt.xyz">
+                                            <div class="form-help">URL vers laquelle rediriger les clients pour accéder à l'espace pro.</div>
+                                        </div>
+                                        
+                                        <div class="form-group">
+                                            <label class="form-check-label">
+                                                <input type="checkbox" 
+                                                       name="enable_redirect" 
+                                                       class="form-check-input"
+                                                       <?php echo $enableRedirect ? 'checked' : ''; ?>>
+                                                Activer la redirection automatique
+                                            </label>
+                                            <div class="form-help">Si activé, les liens vers l'espace client redirigeront automatiquement vers l'URL configurée.</div>
+                                        </div>
+                                        
+                                        <button type="submit" class="btn btn-primary">Mettre à jour la configuration</button>
+                                    </form>
+                                </div>
                             </div>
                             
                             <div class="row">
                                 <div class="col-md-4">
-                                    <h4>Accès clients</h4>
-                                    <p>Gérez les comptes et permissions clients.</p>
+                                    <h4>Accès professionnels</h4>
+                                    <p>Gérez les comptes et permissions des clients professionnels.</p>
                                     <a href="#" class="btn btn-primary">Gérer les comptes</a>
                                 </div>
                                 <div class="col-md-4">
-                                    <h4>Documents</h4>
-                                    <p>Partagez des documents avec vos clients.</p>
+                                    <h4>Documents partagés</h4>
+                                    <p>Partagez des documents avec vos clients professionnels.</p>
                                     <a href="#" class="btn btn-secondary">Gérer les documents</a>
                                 </div>
                                 <div class="col-md-4">
-                                    <h4>Communications</h4>
-                                    <p>Système de messagerie interne.</p>
+                                    <h4>Communications pro</h4>
+                                    <p>Système de messagerie professionnelle.</p>
                                     <a href="#" class="btn btn-info">Messages</a>
                                 </div>
                             </div>

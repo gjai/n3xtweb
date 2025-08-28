@@ -137,23 +137,48 @@ class FileScanner {
      */
     private static function isExpectedPath($path) {
         $expectedPatterns = [
+            // Core directories
             'admin/',
+            'bo/',  // Real back office directory
             'assets/',
             'config/',
             'includes/',
             'backups/',
             'logs/',
             'uploads/',
+            
+            // Root files
             '.htaccess',
             'robots.txt',
             'index.php',
             'README.md',
             'CHANGELOG.md',
+            'INSTALL_IMPROVEMENTS.md',
+            'LICENSE',
             'maintenance.php',
             'install.php',
             'fav.png',
             '.ovhconfig',
-            'config/config.php'
+            '.gitignore',
+            
+            // Configuration files
+            'config/config.php',
+            'config/pro_space.php',
+            
+            // Admin/BO files (both directories)
+            'admin/index.php',
+            'bo/index.php',
+            'bo/login.php',
+            'bo/update.php',
+            'bo/restore.php',
+            'bo/uninstall.php',
+            'bo/captcha.php',
+            
+            // Temporary and cache files
+            '.DS_Store',
+            'Thumbs.db',
+            '.cache/',
+            'tmp/',
         ];
         
         foreach ($expectedPatterns as $pattern) {
@@ -162,12 +187,22 @@ class FileScanner {
             }
         }
         
+        // Check for legitimate file extensions
+        $legitimateExtensions = ['.php', '.css', '.js', '.png', '.jpg', '.jpeg', '.gif', '.svg', '.ico', '.woff', '.woff2', '.ttf', '.eot', '.json', '.xml', '.txt', '.md'];
+        $extension = strtolower(substr($path, strrpos($path, '.')));
+        
         // Also check if it's in a critical directory that should be excluded from scanning
-        $excludeDirectories = ['backups', 'logs', 'config', 'uploads'];
+        $excludeDirectories = ['backups', 'logs', 'config', 'uploads', 'assets', 'includes'];
         foreach ($excludeDirectories as $dir) {
             if (strpos($path, $dir . '/') === 0) {
                 return true;
             }
+        }
+        
+        // Check for hidden files and system files
+        $basename = basename($path);
+        if ($basename[0] === '.' || in_array($basename, ['LICENSE', 'README', 'CHANGELOG'])) {
+            return true;
         }
         
         return false;

@@ -314,7 +314,7 @@ if (defined('ADMIN_PATH')) {
         <div class="header-content">
             <nav class="main-nav">
                 <a href="index.php" class="active">Accueil</a>
-                <a href="#client-area">Espace Client</a>
+                <a href="#client-area">Espace Pro</a>
                 <a href="#boutique" style="display: none;">Boutique</a>
                 <a href="<?php echo $adminDirectory; ?>/login.php">Connexion</a>
             </nav>

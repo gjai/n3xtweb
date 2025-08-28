@@ -4,7 +4,7 @@ A powerful, secure, and responsive web content management system with advanced b
 
 **Publisher:** N3XT Communication  
 **Authors:** Julien Gauthier & Copilot  
-**Version:** 2.1.0
+**Version:** 2.2.0
 
 ## 🚀 Features
 
