@@ -211,6 +211,7 @@ function generateConfigFile($dbConfig, $boDirectory) {
         "'nxtxyzylie618_db'" => "'{$dbConfig['name']}'",
         "'nxtxyzylie618_user'" => "'{$dbConfig['user']}'", 
         "'secure_password'" => "'{$dbConfig['pass']}'",
+        "'n3xtweb_'" => "'{$dbConfig['prefix']}'",
         "define('MAINTENANCE_MODE', false);" => "define('MAINTENANCE_MODE', true);", // Enable maintenance mode by default
         "define('ADMIN_PATH', ROOT_PATH . '/admin');" => "define('ADMIN_PATH', ROOT_PATH . '/{$boDirectory}');"
     ];
