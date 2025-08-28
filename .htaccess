@@ -1,0 +1,55 @@
+# N3XT Communication - Security Configuration
+# Deny access to sensitive directories and files
+
+# Disable server signature
+ServerSignature Off
+
+# Disable directory browsing
+Options -Indexes
+
+# Protect sensitive directories
+<LocationMatch "^/(admin|backups|logs|config|includes)">
+    Order Deny,Allow
+    Deny from all
+    Allow from 127.0.0.1
+    Allow from ::1
+</LocationMatch>
+
+# Protect log files
+<Files "*.log">
+    Order Deny,Allow
+    Deny from all
+</Files>
+
+# Protect backup files
+<Files "*.sql">
+    Order Deny,Allow
+    Deny from all
+</Files>
+
+# Protect configuration files
+<Files "config.php">
+    Order Deny,Allow
+    Deny from all
+</Files>
+
+# Hide .htaccess from users
+<Files ".htaccess">
+    Order Deny,Allow
+    Deny from all
+</Files>
+
+# Security headers
+<IfModule mod_headers.c>
+    Header always set X-Content-Type-Options nosniff
+    Header always set X-Frame-Options DENY
+    Header always set X-XSS-Protection "1; mode=block"
+    Header always set Referrer-Policy "strict-origin-when-cross-origin"
+    Header always set Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self';"
+</IfModule>
+
+# Prevent access to PHP files in sensitive areas
+<FilesMatch "\.(inc|conf|sql|bak)$">
+    Order Deny,Allow
+    Deny from all
+</FilesMatch>

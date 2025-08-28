@@ -1,0 +1,19 @@
+# N3XT Communication - Robots exclusion
+User-agent: *
+
+# Block access to admin and sensitive areas
+Disallow: /admin/
+Disallow: /backups/
+Disallow: /logs/
+Disallow: /config/
+Disallow: /includes/
+Disallow: /install/
+Disallow: /maintenance/
+
+# Block access to sensitive files
+Disallow: /*.log
+Disallow: /*.sql
+Disallow: /*.bak
+Disallow: /*.conf
+Disallow: /.htaccess
+Disallow: /config.php
