@@ -13,6 +13,13 @@ if (!defined('IN_N3XTWEB')) {
 // Define security constant
 define('N3XT_SECURE', true);
 
+// Define logging level constants
+if (!defined('LOG_LEVEL_ERROR')) define('LOG_LEVEL_ERROR', 1);
+if (!defined('LOG_LEVEL_WARNING')) define('LOG_LEVEL_WARNING', 2);
+if (!defined('LOG_LEVEL_INFO')) define('LOG_LEVEL_INFO', 3);
+if (!defined('LOG_LEVEL_DEBUG')) define('LOG_LEVEL_DEBUG', 4);
+if (!defined('DEFAULT_LOG_LEVEL')) define('DEFAULT_LOG_LEVEL', LOG_LEVEL_WARNING);
+
 // Load configuration
 require_once dirname(__DIR__) . '/config/config.php';
 
