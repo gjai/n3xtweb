@@ -440,6 +440,325 @@ class Captcha {
     }
 }
 
+/**
+ * Email utility class
+ */
+class EmailHelper {
+    
+    /**
+     * Send email using PHP mail function
+     */
+    public static function sendMail($to, $subject, $message, $headers = '') {
+        $defaultHeaders = "MIME-Version: 1.0\r\n";
+        $defaultHeaders .= "Content-type: text/html; charset=UTF-8\r\n";
+        $defaultHeaders .= "From: N3XT Communication <noreply@" . $_SERVER['HTTP_HOST'] . ">\r\n";
+        
+        $allHeaders = $defaultHeaders . $headers;
+        
+        return mail($to, $subject, $message, $allHeaders);
+    }
+    
+    /**
+     * Generate email verification code
+     */
+    public static function generateVerificationCode() {
+        return sprintf('%06d', random_int(100000, 999999));
+    }
+    
+    /**
+     * Send verification email
+     */
+    public static function sendVerificationEmail($email, $code, $language = 'fr') {
+        $templates = [
+            'fr' => [
+                'subject' => 'N3XT Communication - Code de vérification',
+                'title' => 'Vérification de votre adresse email',
+                'message' => 'Votre code de vérification est :',
+                'instruction' => 'Veuillez saisir ce code pour continuer l\'installation.',
+                'footer' => 'Ce code expire dans 15 minutes.'
+            ],
+            'en' => [
+                'subject' => 'N3XT Communication - Verification Code',
+                'title' => 'Email Address Verification',
+                'message' => 'Your verification code is:',
+                'instruction' => 'Please enter this code to continue the installation.',
+                'footer' => 'This code expires in 15 minutes.'
+            ]
+        ];
+        
+        $template = $templates[$language] ?? $templates['fr'];
+        
+        $html = self::getEmailTemplate($template['title'], $template['message'], $code, $template['instruction'], $template['footer']);
+        
+        return self::sendMail($email, $template['subject'], $html);
+    }
+    
+    /**
+     * Send admin credentials email
+     */
+    public static function sendAdminCredentials($email, $username, $password, $boDirectory, $language = 'fr') {
+        $adminUrl = 'https://' . $_SERVER['HTTP_HOST'] . '/' . $boDirectory . '/login.php';
+        
+        $templates = [
+            'fr' => [
+                'subject' => 'N3XT Communication - Vos identifiants administrateur',
+                'title' => 'Installation terminée avec succès',
+                'greeting' => 'Félicitations ! N3XT Communication a été installé avec succès.',
+                'credentials_title' => 'Vos identifiants administrateur :',
+                'username_label' => 'Nom d\'utilisateur',
+                'password_label' => 'Mot de passe',
+                'admin_panel_label' => 'Panneau d\'administration',
+                'security_note' => 'Pour votre sécurité, veuillez changer ce mot de passe lors de votre première connexion.',
+                'footer' => 'Conservez ces informations en lieu sûr.'
+            ],
+            'en' => [
+                'subject' => 'N3XT Communication - Your Administrator Credentials',
+                'title' => 'Installation completed successfully',
+                'greeting' => 'Congratulations! N3XT Communication has been installed successfully.',
+                'credentials_title' => 'Your administrator credentials:',
+                'username_label' => 'Username',
+                'password_label' => 'Password',
+                'admin_panel_label' => 'Admin Panel',
+                'security_note' => 'For security, please change this password on your first login.',
+                'footer' => 'Keep this information secure.'
+            ]
+        ];
+        
+        $template = $templates[$language] ?? $templates['fr'];
+        
+        $credentialsHtml = "
+            <div style='background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0; font-family: monospace;'>
+                <p><strong>{$template['username_label']}:</strong> {$username}</p>
+                <p><strong>{$template['password_label']}:</strong> {$password}</p>
+                <p><strong>{$template['admin_panel_label']}:</strong> <a href='{$adminUrl}'>{$adminUrl}</a></p>
+            </div>
+            <div style='background: #fff3cd; border: 1px solid #ffeaa7; padding: 15px; border-radius: 8px; margin: 20px 0;'>
+                <p style='margin: 0; color: #856404;'><strong>⚠️ {$template['security_note']}</strong></p>
+            </div>
+        ";
+        
+        $html = self::getEmailTemplate($template['title'], $template['greeting'], '', $template['credentials_title'] . $credentialsHtml, $template['footer']);
+        
+        return self::sendMail($email, $template['subject'], $html);
+    }
+    
+    /**
+     * Get email HTML template
+     */
+    private static function getEmailTemplate($title, $message, $code = '', $instruction = '', $footer = '') {
+        $codeHtml = $code ? "<div style='background: #3498db; color: white; font-size: 24px; font-weight: bold; padding: 20px; text-align: center; border-radius: 8px; margin: 20px 0; letter-spacing: 2px;'>{$code}</div>" : '';
+        
+        return "
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset='UTF-8'>
+            <meta name='viewport' content='width=device-width, initial-scale=1.0'>
+            <title>N3XT Communication</title>
+        </head>
+        <body style='font-family: -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; background: #f5f5f5;'>
+            <div style='max-width: 600px; margin: 0 auto; background: white; box-shadow: 0 0 20px rgba(0,0,0,0.1);'>
+                <div style='background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center;'>
+                    <h1 style='margin: 0; font-size: 24px; font-weight: 600;'>N3XT Communication</h1>
+                    <p style='margin: 10px 0 0 0; opacity: 0.9;'>{$title}</p>
+                </div>
+                <div style='padding: 30px;'>
+                    <p style='font-size: 16px; margin-bottom: 20px;'>{$message}</p>
+                    {$codeHtml}
+                    <p style='margin: 20px 0;'>{$instruction}</p>
+                    <hr style='border: none; border-top: 1px solid #ecf0f1; margin: 30px 0;'>
+                    <p style='font-size: 14px; color: #7f8c8d; margin: 0;'>{$footer}</p>
+                </div>
+                <div style='background: #2c3e50; color: white; padding: 20px; text-align: center; font-size: 14px;'>
+                    <p style='margin: 0; opacity: 0.8;'>© " . date('Y') . " N3XT Communication. Tous droits réservés.</p>
+                </div>
+            </div>
+        </body>
+        </html>";
+    }
+}
+
+/**
+ * Installation helper class
+ */
+class InstallHelper {
+    
+    /**
+     * Generate random directory name for Back Office
+     */
+    public static function generateRandomBoDirectory() {
+        $prefix = 'bo-';
+        $suffix = bin2hex(random_bytes(8));
+        return $prefix . $suffix;
+    }
+    
+    /**
+     * Generate secure admin password
+     */
+    public static function generateAdminPassword($length = 12) {
+        $chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*';
+        $password = '';
+        $charCount = strlen($chars);
+        
+        for ($i = 0; $i < $length; $i++) {
+            $password .= $chars[random_int(0, $charCount - 1)];
+        }
+        
+        return $password;
+    }
+    
+    /**
+     * Create Back Office directory
+     */
+    public static function createBoDirectory($dirName) {
+        $sourcePath = __DIR__ . '/../admin';
+        $targetPath = __DIR__ . '/../' . $dirName;
+        
+        if (!file_exists($sourcePath)) {
+            return false;
+        }
+        
+        if (file_exists($targetPath)) {
+            return false;
+        }
+        
+        return self::copyDirectory($sourcePath, $targetPath);
+    }
+    
+    /**
+     * Copy directory recursively
+     */
+    private static function copyDirectory($source, $destination) {
+        if (!is_dir($source)) {
+            return false;
+        }
+        
+        if (!mkdir($destination, 0755, true)) {
+            return false;
+        }
+        
+        $iterator = new RecursiveIteratorIterator(
+            new RecursiveDirectoryIterator($source, RecursiveDirectoryIterator::SKIP_DOTS),
+            RecursiveIteratorIterator::SELF_FIRST
+        );
+        
+        foreach ($iterator as $item) {
+            $target = $destination . DIRECTORY_SEPARATOR . $iterator->getSubPathName();
+            
+            if ($item->isDir()) {
+                if (!mkdir($target, 0755, true)) {
+                    return false;
+                }
+            } else {
+                if (!copy($item, $target)) {
+                    return false;
+                }
+            }
+        }
+        
+        return true;
+    }
+    
+    /**
+     * Update database table prefix in queries
+     */
+    public static function updateTablePrefix($sql, $prefix = '') {
+        if (empty($prefix)) {
+            return $sql;
+        }
+        
+        // Add prefix to common table names
+        $tables = ['admin_users', 'system_settings', 'logs', 'backups'];
+        
+        foreach ($tables as $table) {
+            $sql = str_replace($table, $prefix . $table, $sql);
+        }
+        
+        return $sql;
+    }
+}
+
+/**
+ * Language helper class
+ */
+class LanguageHelper {
+    
+    private static $translations = [
+        'fr' => [
+            'installation_title' => 'Installation de N3XT Communication',
+            'welcome' => 'Bienvenue',
+            'language_selection' => 'Sélection de la langue',
+            'choose_language' => 'Choisissez votre langue',
+            'french' => 'Français',
+            'english' => 'English',
+            'continue' => 'Continuer',
+            'next' => 'Suivant',
+            'previous' => 'Précédent',
+            'finish' => 'Terminer',
+            'step' => 'Étape',
+            'system_requirements' => 'Vérification des prérequis',
+            'database_configuration' => 'Configuration de la base de données',
+            'admin_setup' => 'Configuration administrateur',
+            'installation_complete' => 'Installation terminée',
+            'email_address' => 'Adresse email',
+            'verification_code' => 'Code de vérification',
+            'send_code' => 'Envoyer le code',
+            'verify_code' => 'Vérifier le code',
+            'admin_username' => 'Nom d\'utilisateur administrateur',
+            'table_prefix' => 'Préfixe des tables',
+            'table_prefix_help' => 'Préfixe pour les tables de la base de données (optionnel)',
+            'email_sent' => 'Un code de vérification a été envoyé à votre adresse email.',
+            'invalid_code' => 'Code de vérification invalide ou expiré.',
+            'installation_success' => 'L\'installation s\'est terminée avec succès !',
+            'check_email' => 'Vérifiez votre email pour les identifiants administrateur.',
+            'maintenance_mode_enabled' => 'Le mode maintenance est activé par défaut.',
+        ],
+        'en' => [
+            'installation_title' => 'N3XT Communication Installation',
+            'welcome' => 'Welcome',
+            'language_selection' => 'Language Selection',
+            'choose_language' => 'Choose your language',
+            'french' => 'Français',
+            'english' => 'English',
+            'continue' => 'Continue',
+            'next' => 'Next',
+            'previous' => 'Previous',
+            'finish' => 'Finish',
+            'step' => 'Step',
+            'system_requirements' => 'System Requirements Check',
+            'database_configuration' => 'Database Configuration',
+            'admin_setup' => 'Administrator Setup',
+            'installation_complete' => 'Installation Complete',
+            'email_address' => 'Email Address',
+            'verification_code' => 'Verification Code',
+            'send_code' => 'Send Code',
+            'verify_code' => 'Verify Code',
+            'admin_username' => 'Administrator Username',
+            'table_prefix' => 'Table Prefix',
+            'table_prefix_help' => 'Prefix for database tables (optional)',
+            'email_sent' => 'A verification code has been sent to your email address.',
+            'invalid_code' => 'Invalid or expired verification code.',
+            'installation_success' => 'Installation completed successfully!',
+            'check_email' => 'Check your email for administrator credentials.',
+            'maintenance_mode_enabled' => 'Maintenance mode is enabled by default.',
+        ]
+    ];
+    
+    /**
+     * Get translation
+     */
+    public static function get($key, $language = 'fr') {
+        return self::$translations[$language][$key] ?? self::$translations['fr'][$key] ?? $key;
+    }
+    
+    /**
+     * Get all translations for a language
+     */
+    public static function getAll($language = 'fr') {
+        return self::$translations[$language] ?? self::$translations['fr'];
+    }
+}
+
 // Initialize security headers
 Security::setSecurityHeaders();
 

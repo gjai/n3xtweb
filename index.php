@@ -11,7 +11,14 @@ if (!file_exists('config/config.php')) {
     exit;
 }
 
+// Load config and check if properly configured
 require_once 'config/config.php';
+
+// Additional check: if database config is still default, redirect to install
+if (!defined('DB_HOST') || DB_HOST === 'localhost' && DB_NAME === 'n3xt_communication' && DB_USER === 'n3xt_user') {
+    header('Location: install.php');
+    exit;
+}
 
 // Check maintenance mode
 if (MAINTENANCE_MODE) {
@@ -22,6 +29,18 @@ if (MAINTENANCE_MODE) {
     if (!$isAdmin) {
         header('Location: maintenance.php');
         exit;
+    }
+}
+
+// Find admin directory (could be 'admin' or a generated BO directory)
+$adminDirectory = 'admin'; // default
+if (defined('ADMIN_PATH')) {
+    $adminDirectory = basename(ADMIN_PATH);
+} else {
+    // Look for directories starting with 'bo-'
+    $dirs = glob('bo-*', GLOB_ONLYDIR);
+    if (!empty($dirs)) {
+        $adminDirectory = $dirs[0]; // Use the first found BO directory
     }
 }
 ?>
@@ -182,7 +201,7 @@ if (MAINTENANCE_MODE) {
                 back office capabilities, automated updates, and comprehensive backup solutions.
             </p>
             <div class="hero-buttons">
-                <a href="admin/login.php" class="hero-btn">
+                <a href="<?php echo htmlspecialchars($adminDirectory); ?>/login.php" class="hero-btn">
                     🔐 Admin Panel
                 </a>
                 <a href="#features" class="hero-btn">
