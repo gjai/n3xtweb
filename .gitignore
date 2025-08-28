@@ -18,6 +18,10 @@ uploads/*
 tmp/*
 !tmp/.gitkeep
 
+# Test files
+/tmp/
+test_*.php
+
 # System files
 .DS_Store
 Thumbs.db
