@@ -5,6 +5,9 @@
  * Enhanced admin authentication with captcha, rate limiting, and security logging.
  */
 
+// Define security constant before including any files
+define('IN_N3XTWEB', true);
+
 require_once '../includes/functions.php';
 
 // Check if already logged in

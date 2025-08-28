@@ -5,6 +5,9 @@
  * Main admin panel interface with navigation to all back office modules.
  */
 
+// Define security constant before including any files
+define('IN_N3XTWEB', true);
+
 require_once '../includes/functions.php';
 
 // Check authentication
