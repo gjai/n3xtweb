@@ -5,6 +5,20 @@ All notable changes to N3XT WEB will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.3.2] - 2024-12-19
+
+### Security
+- **🔒 Enhanced Front Office Security**: Removed all Back Office login links from public areas
+  - Removed "Connexion" navigation link from main header in `index.php`
+  - Removed admin login hint from maintenance page easter egg
+  - Removed admin panel links from maintenance page admin preview mode
+  - Public users can no longer discover Back Office URLs through the Front Office interface
+  - Back Office remains fully functional for administrators who access it directly
+
+### Changed
+- **Front Office Navigation**: Simplified main navigation menu without admin access link
+- **Maintenance Page**: Cleaned up admin-specific elements for better security through obscurity
+
 ## [2.3.1] - 2024-12-19
 
 ### Added
