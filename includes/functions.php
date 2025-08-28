@@ -36,7 +36,7 @@ class Database {
             $this->pdo = new PDO($dsn, DB_USER, DB_PASS, $options);
         } catch (PDOException $e) {
             error_log("Database connection failed: " . $e->getMessage());
-            die("Database connection failed. Please check configuration.");
+            throw new Exception("Database connection failed. Please check configuration. Error: " . $e->getMessage());
         }
     }
     
@@ -49,6 +49,50 @@ class Database {
     
     public function getConnection() {
         return $this->pdo;
+    }
+    
+    /**
+     * Test database connection
+     */
+    public static function testConnection($host, $name, $user, $pass) {
+        try {
+            $dsn = "mysql:host={$host};dbname={$name};charset=utf8mb4";
+            $options = [
+                PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+                PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+                PDO::ATTR_EMULATE_PREPARES => false,
+                PDO::ATTR_PERSISTENT => false
+            ];
+            
+            $pdo = new PDO($dsn, $user, $pass, $options);
+            
+            // Test basic query
+            $pdo->query("SELECT 1");
+            
+            return ['success' => true, 'message' => 'Connection successful'];
+        } catch (PDOException $e) {
+            $errorCode = $e->getCode();
+            $message = "Connection failed: ";
+            
+            switch ($errorCode) {
+                case 1045:
+                    $message .= "Access denied. Please check username and password.";
+                    break;
+                case 1049:
+                    $message .= "Unknown database '{$name}'. Please check database name.";
+                    break;
+                case 2002:
+                    $message .= "Can't connect to MySQL server on '{$host}'. Please check hostname.";
+                    break;
+                case 2005:
+                    $message .= "Unknown MySQL server host '{$host}'. Please check hostname.";
+                    break;
+                default:
+                    $message .= $e->getMessage();
+            }
+            
+            return ['success' => false, 'message' => $message, 'code' => $errorCode];
+        }
     }
     
     /**
@@ -208,16 +252,68 @@ class Logger {
     }
     
     /**
-     * Log access attempt
+     * Get table prefix from configuration
+     */
+    public static function getTablePrefix() {
+        static $prefix = null;
+        if ($prefix === null) {
+            try {
+                // Try to get from environment/session first (during installation)
+                if (isset($_SESSION['db_config']['prefix'])) {
+                    $prefix = $_SESSION['db_config']['prefix'];
+                } elseif (defined('TABLE_PREFIX')) {
+                    $prefix = TABLE_PREFIX;
+                } else {
+                    // Try to get from database - check if we can connect first
+                    try {
+                        $db = Database::getInstance();
+                        // Try with default prefix first
+                        $result = $db->fetchOne("SELECT setting_value FROM n3xtweb_system_settings WHERE setting_key = 'table_prefix' LIMIT 1");
+                        $prefix = $result ? $result['setting_value'] : 'n3xtweb_';
+                    } catch (Exception $e) {
+                        // If database connection fails, fall back to default
+                        $prefix = 'n3xtweb_';
+                    }
+                }
+            } catch (Exception $e) {
+                $prefix = 'n3xtweb_'; // Default fallback
+            }
+        }
+        return $prefix;
+    }
+    
+    /**
+     * Log access attempt - now stores in database
      */
     public static function logAccess($username, $success, $notes = '') {
-        $status = $success ? 'SUCCESS' : 'FAILED';
-        $message = "Login attempt - Username: {$username} | Status: {$status}";
-        if ($notes) {
-            $message .= " | Notes: {$notes}";
+        try {
+            $db = Database::getInstance();
+            $ip = $_SERVER['REMOTE_ADDR'] ?? 'unknown';
+            $userAgent = $_SERVER['HTTP_USER_AGENT'] ?? 'unknown';
+            $status = $success ? 'SUCCESS' : 'FAILED';
+            $prefix = self::getTablePrefix();
+            
+            // Store in access_logs table
+            $db->execute(
+                "INSERT INTO {$prefix}access_logs (username, ip_address, user_agent, action, status, notes) VALUES (?, ?, ?, ?, ?, ?)",
+                [$username, $ip, $userAgent, 'login', $status, $notes]
+            );
+            
+            // Also store in login_attempts table for tracking
+            $db->execute(
+                "INSERT INTO {$prefix}login_attempts (ip_address, username, success, failure_reason, user_agent) VALUES (?, ?, ?, ?, ?)",
+                [$ip, $username, $success ? 1 : 0, $success ? null : $notes, $userAgent]
+            );
+            
+        } catch (Exception $e) {
+            // Fallback to file logging if database fails
+            $status = $success ? 'SUCCESS' : 'FAILED';
+            $message = "Login attempt - Username: {$username} | Status: {$status}";
+            if ($notes) {
+                $message .= " | Notes: {$notes}";
+            }
+            self::log($message, LOG_LEVEL_INFO, 'access');
         }
-        
-        self::log($message, LOG_LEVEL_INFO, 'access');
     }
     
     /**
@@ -234,6 +330,106 @@ class Logger {
 }
 
 /**
+ * Security settings management
+ */
+class SecuritySettings {
+    
+    /**
+     * Get security setting from database
+     */
+    public static function getSetting($key, $default = false) {
+        try {
+            $db = Database::getInstance();
+            $prefix = Logger::getTablePrefix();
+            $result = $db->fetchOne(
+                "SELECT setting_value FROM {$prefix}system_settings WHERE setting_key = ?",
+                [$key]
+            );
+            return $result ? (bool)$result['setting_value'] : $default;
+        } catch (Exception $e) {
+            return $default;
+        }
+    }
+    
+    /**
+     * Set security setting in database
+     */
+    public static function setSetting($key, $value) {
+        try {
+            $db = Database::getInstance();
+            $prefix = Logger::getTablePrefix();
+            $db->execute(
+                "INSERT INTO {$prefix}system_settings (setting_key, setting_value) VALUES (?, ?) ON DUPLICATE KEY UPDATE setting_value = ?",
+                [$key, $value ? '1' : '0', $value ? '1' : '0']
+            );
+            return true;
+        } catch (Exception $e) {
+            return false;
+        }
+    }
+    
+    /**
+     * Check if captcha is enabled
+     */
+    public static function isCaptchaEnabled() {
+        return self::getSetting('enable_captcha', ENABLE_CAPTCHA);
+    }
+    
+    /**
+     * Check if login attempts limit is enabled
+     */
+    public static function isLoginAttemptsLimitEnabled() {
+        return self::getSetting('enable_login_attempts_limit', ENABLE_LOGIN_ATTEMPTS_LIMIT);
+    }
+    
+    /**
+     * Check if IP blocking is enabled
+     */
+    public static function isIpBlockingEnabled() {
+        return self::getSetting('enable_ip_blocking', ENABLE_IP_BLOCKING);
+    }
+    
+    /**
+     * Check if IP tracking is enabled
+     */
+    public static function isIpTrackingEnabled() {
+        return self::getSetting('enable_ip_tracking', ENABLE_IP_TRACKING);
+    }
+    
+    /**
+     * Get max login attempts from database or config
+     */
+    public static function getMaxLoginAttempts() {
+        try {
+            $db = Database::getInstance();
+            $prefix = Logger::getTablePrefix();
+            $result = $db->fetchOne(
+                "SELECT setting_value FROM {$prefix}system_settings WHERE setting_key = 'max_login_attempts'"
+            );
+            return $result ? (int)$result['setting_value'] : MAX_LOGIN_ATTEMPTS;
+        } catch (Exception $e) {
+            return MAX_LOGIN_ATTEMPTS;
+        }
+    }
+    
+    /**
+     * Get login lockout time from database or config  
+     */
+    public static function getLoginLockoutTime() {
+        try {
+            $db = Database::getInstance();
+            $prefix = Logger::getTablePrefix();
+            $result = $db->fetchOne(
+                "SELECT setting_value FROM {$prefix}system_settings WHERE setting_key = 'login_lockout_time'"
+            );
+            return $result ? (int)$result['setting_value'] : LOGIN_LOCKOUT_TIME;
+        } catch (Exception $e) {
+            return LOGIN_LOCKOUT_TIME;
+        }
+    }
+}
+
+/**
  * Session management
  */
 class Session {
@@ -243,9 +439,25 @@ class Session {
      */
     public static function start() {
         if (session_status() === PHP_SESSION_NONE) {
-            ini_set('session.cookie_httponly', 1);
-            ini_set('session.cookie_secure', isset($_SERVER['HTTPS']));
+            // Set secure cookie parameters
+            $secure = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off';
+            $httponly = true;
+            $samesite = 'Strict';
+            
+            // Set session cookie parameters
+            session_set_cookie_params([
+                'lifetime' => ADMIN_SESSION_TIMEOUT,
+                'path' => '/',
+                'domain' => '',
+                'secure' => $secure,
+                'httponly' => $httponly,
+                'samesite' => $samesite
+            ]);
+            
             ini_set('session.use_strict_mode', 1);
+            ini_set('session.cookie_httponly', 1);
+            ini_set('session.cookie_secure', $secure);
+            
             session_start();
             
             // Regenerate session ID periodically
@@ -272,18 +484,43 @@ class Session {
      * Login user
      */
     public static function login($username) {
+        // Clear any previous session data
+        session_unset();
+        
         $_SESSION['admin_logged_in'] = true;
         $_SESSION['admin_username'] = $username;
         $_SESSION['login_time'] = time();
+        $_SESSION['last_regeneration'] = time();
+        
+        // Regenerate session ID for security
         session_regenerate_id(true);
     }
     
     /**
-     * Logout user
+     * Logout user 
      */
     public static function logout() {
+        // Clear session data
         session_unset();
-        session_destroy();
+        
+        // Destroy session
+        if (session_status() === PHP_SESSION_ACTIVE) {
+            session_destroy();
+        }
+        
+        // Clear session cookie
+        $params = session_get_cookie_params();
+        setcookie(
+            session_name(),
+            '',
+            time() - 3600,
+            $params['path'],
+            $params['domain'],
+            $params['secure'],
+            $params['httponly']
+        );
+        
+        // Start new clean session
         session_start();
         session_regenerate_id(true);
     }
@@ -683,7 +920,7 @@ class InstallHelper {
      * Create Back Office directory
      */
     public static function createBoDirectory($dirName) {
-        $sourcePath = __DIR__ . '/../admin';
+        $sourcePath = __DIR__ . '/../bo';
         $targetPath = __DIR__ . '/../' . $dirName;
         
         if (!file_exists($sourcePath)) {
@@ -694,7 +931,28 @@ class InstallHelper {
             return false;
         }
         
-        return self::copyDirectory($sourcePath, $targetPath);
+        // Copy the bo directory to the new random directory name
+        if (!self::copyDirectory($sourcePath, $targetPath)) {
+            return false;
+        }
+        
+        // Create proper .htaccess for the BO directory
+        $htaccessContent = "# N3XT WEB - Back Office Access Control\n";
+        $htaccessContent .= "Options -Indexes\n";
+        $htaccessContent .= "RewriteEngine On\n";
+        $htaccessContent .= "RewriteCond %{REQUEST_FILENAME} !-f\n";
+        $htaccessContent .= "RewriteCond %{REQUEST_FILENAME} !-d\n";
+        $htaccessContent .= "RewriteRule ^(.*)$ index.php?route=$1 [QSA,L]\n";
+        $htaccessContent .= "\n# Security headers\n";
+        $htaccessContent .= "<IfModule mod_headers.c>\n";
+        $htaccessContent .= "    Header always set X-Content-Type-Options nosniff\n";
+        $htaccessContent .= "    Header always set X-Frame-Options DENY\n";
+        $htaccessContent .= "    Header always set X-XSS-Protection \"1; mode=block\"\n";
+        $htaccessContent .= "</IfModule>\n";
+        
+        file_put_contents($targetPath . '/.htaccess', $htaccessContent);
+        
+        return true;
     }
     
     /**

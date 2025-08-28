@@ -18,7 +18,7 @@ if (!file_exists('config/config.php')) {
 require_once 'config/config.php';
 
 // Additional check: if database config is still default, redirect to install
-if (!defined('DB_HOST') || DB_HOST === 'localhost' && DB_NAME === 'n3xtweb_database' && DB_USER === 'n3xtweb_user') {
+if (!defined('DB_HOST') || (DB_HOST === 'nxtxyzylie618.mysql.db' && DB_NAME === 'nxtxyzylie618_db' && DB_USER === 'nxtxyzylie618_user')) {
     header('Location: install.php');
     exit;
 }

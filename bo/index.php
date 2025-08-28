@@ -10,6 +10,9 @@ define('IN_N3XTWEB', true);
 
 require_once '../includes/functions.php';
 
+// Start secure session  
+Session::start();
+
 // Check authentication
 if (!Session::isLoggedIn()) {
     header('Location: login.php');
@@ -128,6 +131,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                 } else {
                     $settingsMessage = 'Fichier de configuration non trouvé.';
                     $settingsMessageType = 'danger';
+                }
+                break;
+                
+            case 'test_database':
+                try {
+                    $db = Database::getInstance();
+                    $result = $db->fetchOne("SELECT 1 as test, NOW() as current_time");
+                    if ($result) {
+                        $settingsMessage = 'Database connection successful! Server time: ' . $result['current_time'];
+                        $settingsMessageType = 'success';
+                        Logger::logAccess($_SESSION['admin_username'], true, 'Database connection test successful');
+                    } else {
+                        $settingsMessage = 'Database connection test failed - no result returned.';
+                        $settingsMessageType = 'danger';
+                    }
+                } catch (Exception $e) {
+                    $settingsMessage = 'Database connection test failed: ' . $e->getMessage();
+                    $settingsMessageType = 'danger';
+                    Logger::logAccess($_SESSION['admin_username'], false, 'Database connection test failed: ' . $e->getMessage());
                 }
                 break;
         }
@@ -303,6 +325,16 @@ if (file_exists($accessLogFile)) {
                                     <tr>
                                         <td><strong>Délai d'expiration session</strong></td>
                                         <td><?php echo htmlspecialchars($systemInfo['session_timeout']); ?></td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Base de données</strong></td>
+                                        <td>
+                                            <form method="post" style="display: inline;">
+                                                <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrfToken); ?>">
+                                                <input type="hidden" name="action" value="test_database">
+                                                <button type="submit" class="btn btn-sm btn-outline-primary">Tester la connexion</button>
+                                            </form>
+                                        </td>
                                     </tr>
                                 </table>
                             </div>

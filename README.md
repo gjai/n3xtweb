@@ -4,16 +4,17 @@ A powerful, secure, and responsive web content management system with advanced b
 
 **Publisher:** N3XT Communication  
 **Authors:** Julien Gauthier & Copilot  
-**Version:** 2.2.0
+**Version:** 2.3.0
 
 ## 🚀 Features
 
 ### 🔐 Enhanced Security
-- Multi-layer authentication with captcha protection
-- Rate limiting and IP blocking after failed attempts
-- Comprehensive access logging and audit trails
+- Multi-layer authentication with configurable captcha protection
+- Configurable rate limiting and IP blocking (disabled by default)
+- Comprehensive database-based access logging and audit trails
 - PDO prepared statements to prevent SQL injection
 - Security headers and CSRF token protection
+- Dynamic security settings configurable from Back Office
 
 ### 🔄 Automated Updates
 - GitHub integration for downloading latest releases
@@ -36,11 +37,12 @@ A powerful, secure, and responsive web content management system with advanced b
 - Progressive enhancement for desktop users
 
 ### 📊 Comprehensive Logging
-- Access attempt logging with IP tracking
+- Database-based access attempt logging with IP tracking
+- File-based logging as fallback for system reliability
 - Update activity monitoring
-- System error tracking
+- System error tracking with detailed diagnostics
 - Configurable log levels
-- Real-time log viewing in admin panel
+- Real-time log viewing in admin panel with database connection testing
 
 ## 📋 System Requirements
 
@@ -240,13 +242,13 @@ Monitor: Resource usage in OVH control panel
 ## 🔧 Configuration
 
 ### Database Configuration
-The system uses MySQL/MariaDB for data storage. Configuration is done during installation in `config/config.php`:
+The system uses MySQL/MariaDB for data storage. Default configuration optimized for nxtxyzylie618 hosting:
 
 ```php
-define('DB_HOST', 'localhost');
-define('DB_NAME', 'n3xtweb_database');
-define('DB_USER', 'your_db_user');
-define('DB_PASS', 'your_db_password');
+define('DB_HOST', 'nxtxyzylie618.mysql.db');
+define('DB_NAME', 'nxtxyzylie618_db');
+define('DB_USER', 'nxtxyzylie618_user');
+define('DB_PASS', 'your_secure_password');
 ```
 
 ### OVH Database Configuration with PDO
@@ -264,6 +266,16 @@ $pdo = getPDOConnection();
 ```
 
 ### Security Settings
+Security features are configurable through the Back Office and disabled by default:
+```php
+// Security features (disabled by default, configurable in BO)
+define('ENABLE_CAPTCHA', false);
+define('ENABLE_LOGIN_ATTEMPTS_LIMIT', false);  
+define('ENABLE_IP_BLOCKING', false);
+define('ENABLE_IP_TRACKING', false);
+```
+
+Traditional security constants remain available:
 ```php
 define('ADMIN_SESSION_TIMEOUT', 3600); // 1 hour
 define('MAX_LOGIN_ATTEMPTS', 3);

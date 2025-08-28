@@ -19,7 +19,7 @@ session_start();
 // Check if system is already installed
 if (file_exists('config/config.php')) {
     $config = include 'config/config.php';
-    if (defined('DB_HOST') && DB_HOST !== 'localhost') {
+    if (defined('DB_HOST') && !(DB_HOST === 'nxtxyzylie618.mysql.db' && DB_NAME === 'nxtxyzylie618_db' && DB_USER === 'nxtxyzylie618_user')) {
         // Find the admin directory
         $adminDir = 'admin';
         if (isset($_SESSION['bo_directory']) && file_exists($_SESSION['bo_directory'])) {
@@ -120,12 +120,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $tablePrefix = Security::sanitizeInput($_POST['table_prefix'] ?? '');
             
             // Test database connection
-            try {
-                $dsn = "mysql:host={$dbHost};dbname={$dbName};charset=utf8mb4";
-                $pdo = new PDO($dsn, $dbUser, $dbPass, [
-                    PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION
-                ]);
-                
+            $testResult = Database::testConnection($dbHost, $dbName, $dbUser, $dbPass);
+            
+            if ($testResult['success']) {
                 // Store database config in session
                 $_SESSION['db_config'] = [
                     'host' => $dbHost,
@@ -136,8 +133,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 ];
                 
                 $step = 5;
-            } catch (PDOException $e) {
-                $error = 'Database connection failed: ' . $e->getMessage();
+            } else {
+                $error = $testResult['message'];
             }
             break;
             
@@ -204,9 +201,9 @@ function generateConfigFile($dbConfig, $boDirectory) {
     $template = file_get_contents('config/config.php');
     
     $replacements = [
-        "'localhost'" => "'{$dbConfig['host']}'",
-        "'n3xtweb_database'" => "'{$dbConfig['name']}'",
-        "'n3xtweb_user'" => "'{$dbConfig['user']}'",
+        "'nxtxyzylie618.mysql.db'" => "'{$dbConfig['host']}'",
+        "'nxtxyzylie618_db'" => "'{$dbConfig['name']}'",
+        "'nxtxyzylie618_user'" => "'{$dbConfig['user']}'", 
         "'secure_password'" => "'{$dbConfig['pass']}'",
         "define('MAINTENANCE_MODE', false);" => "define('MAINTENANCE_MODE', true);", // Enable maintenance mode by default
         "define('ADMIN_PATH', ROOT_PATH . '/admin');" => "define('ADMIN_PATH', ROOT_PATH . '/{$boDirectory}');"
@@ -252,12 +249,56 @@ function createDatabaseTables($dbConfig) {
     ";
     $pdo->exec($sql);
     
+    // Create access logs table for database logging
+    $sql = "
+        CREATE TABLE IF NOT EXISTS {$prefix}access_logs (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            username VARCHAR(50),
+            ip_address VARCHAR(45),
+            user_agent TEXT,
+            action VARCHAR(100),
+            status ENUM('SUCCESS', 'FAILED') NOT NULL,
+            notes TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            INDEX idx_username (username),
+            INDEX idx_ip (ip_address),
+            INDEX idx_status (status),
+            INDEX idx_created_at (created_at)
+        )
+    ";
+    $pdo->exec($sql);
+    
+    // Create login attempts table for tracking attempts
+    $sql = "
+        CREATE TABLE IF NOT EXISTS {$prefix}login_attempts (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            ip_address VARCHAR(45) NOT NULL,
+            username VARCHAR(50),
+            attempt_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            success BOOLEAN DEFAULT FALSE,
+            failure_reason VARCHAR(255),
+            user_agent TEXT,
+            blocked_until TIMESTAMP NULL,
+            INDEX idx_ip_time (ip_address, attempt_time),
+            INDEX idx_username (username),
+            INDEX idx_blocked (blocked_until)
+        )
+    ";
+    $pdo->exec($sql);
+    
     // Insert default settings
     $settings = [
         ['maintenance_mode', '1'], // Enable maintenance mode by default
         ['system_version', SYSTEM_VERSION],
         ['install_date', date('Y-m-d H:i:s')],
-        ['table_prefix', $prefix]
+        ['table_prefix', $prefix],
+        // Security settings (disabled by default)
+        ['enable_captcha', '0'],
+        ['enable_login_attempts_limit', '0'], 
+        ['enable_ip_blocking', '0'],
+        ['enable_ip_tracking', '0'],
+        ['max_login_attempts', '3'],
+        ['login_lockout_time', '900']
     ];
     
     $stmt = $pdo->prepare("INSERT IGNORE INTO {$prefix}system_settings (setting_key, setting_value) VALUES (?, ?)");
@@ -856,7 +897,7 @@ $allRequirementsMet = !in_array(false, $requirements);
                                    id="db_host" 
                                    name="db_host" 
                                    class="form-control"
-                                   value="<?php echo htmlspecialchars($_POST['db_host'] ?? 'localhost'); ?>"
+                                   value="<?php echo htmlspecialchars($_POST['db_host'] ?? 'nxtxyzylie618.mysql.db'); ?>"
                                    required>
                         </div>
                         
@@ -866,7 +907,7 @@ $allRequirementsMet = !in_array(false, $requirements);
                                    id="db_name" 
                                    name="db_name" 
                                    class="form-control"
-                                   value="<?php echo htmlspecialchars($_POST['db_name'] ?? 'n3xtweb_database'); ?>"
+                                   value="<?php echo htmlspecialchars($_POST['db_name'] ?? 'nxtxyzylie618_db'); ?>"
                                    required>
                         </div>
                         
@@ -876,7 +917,7 @@ $allRequirementsMet = !in_array(false, $requirements);
                                    id="db_user" 
                                    name="db_user" 
                                    class="form-control"
-                                   value="<?php echo htmlspecialchars($_POST['db_user'] ?? ''); ?>"
+                                   value="<?php echo htmlspecialchars($_POST['db_user'] ?? 'nxtxyzylie618_user'); ?>"
                                    required>
                         </div>
                         
