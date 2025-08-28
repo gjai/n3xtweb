@@ -69,7 +69,7 @@ define('GITHUB_REPO', 'n3xtweb');
 define('GITHUB_API_URL', 'https://api.github.com');
 
 // System settings
-define('SYSTEM_VERSION', '2.3.0');
+define('SYSTEM_VERSION', '2.3.1');
 define('MAINTENANCE_MODE', false);
 define('DEBUG_MODE', false);
 

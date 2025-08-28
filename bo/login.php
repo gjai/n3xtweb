@@ -159,7 +159,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$isBlocked) {
                         }
                     } catch (Exception $e) {
                         Logger::log("Database error during login: " . $e->getMessage(), LOG_LEVEL_ERROR, 'access');
-                        $error = 'Erreur de connexion à la base de données.';
+                        
+                        // Provide more detailed database connection diagnostics
+                        $dbDiagnostic = getDatabaseDiagnostic($e);
+                        $error = $dbDiagnostic['message'];
+                        
+                        // Store diagnostic info for potential config testing
+                        $_SESSION['last_db_error'] = [
+                            'message' => $e->getMessage(),
+                            'code' => $e->getCode(),
+                            'time' => time()
+                        ];
                     }
                 }
                 break;
@@ -215,7 +225,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$isBlocked) {
                         }
                     } catch (Exception $e) {
                         Logger::log("Forgot password error: " . $e->getMessage(), LOG_LEVEL_ERROR, 'access');
-                        $error = 'Erreur interne. Veuillez réessayer.';
+                        
+                        // Check if it's a database connection issue
+                        if (strpos($e->getMessage(), 'Database connection') !== false || 
+                            strpos(get_class($e), 'PDO') !== false) {
+                            $dbDiagnostic = getDatabaseDiagnostic($e);
+                            $error = 'Erreur de base de données: ' . $dbDiagnostic['message'];
+                        } else {
+                            $error = 'Erreur interne. Veuillez réessayer.';
+                        }
                     }
                 }
                 break;
@@ -255,8 +273,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$isBlocked) {
                         }
                     } catch (Exception $e) {
                         Logger::log("Password reset error: " . $e->getMessage(), LOG_LEVEL_ERROR, 'access');
-                        $error = 'Erreur lors de la réinitialisation. Veuillez réessayer.';
+                        
+                        // Check if it's a database connection issue
+                        if (strpos($e->getMessage(), 'Database connection') !== false || 
+                            strpos(get_class($e), 'PDO') !== false) {
+                            $dbDiagnostic = getDatabaseDiagnostic($e);
+                            $error = 'Erreur de base de données: ' . $dbDiagnostic['message'];
+                        } else {
+                            $error = 'Erreur lors de la réinitialisation. Veuillez réessayer.';
+                        }
                     }
+                }
+                break;
+                
+            case 'test_db':
+                // Test database connection
+                if (defined('DB_HOST') && defined('DB_NAME') && defined('DB_USER') && defined('DB_PASS')) {
+                    $testResult = Database::testConnection(DB_HOST, DB_NAME, DB_USER, DB_PASS);
+                    
+                    if ($testResult['success']) {
+                        $success = 'Connexion à la base de données réussie ! Configuration correcte.';
+                    } else {
+                        $error = 'Test de connexion échoué: ' . $testResult['message'];
+                    }
+                } else {
+                    $error = 'Configuration de base de données manquante. Vérifiez le fichier config/config.php';
                 }
                 break;
         }
@@ -277,9 +318,38 @@ if ($resetMode) {
             $resetMode = false;
         }
     } catch (Exception $e) {
-        $error = 'Erreur de validation du token.';
+        $dbDiagnostic = getDatabaseDiagnostic($e);
+        $error = 'Erreur de validation du token: ' . $dbDiagnostic['message'];
         $resetMode = false;
     }
+}
+
+/**
+ * Get detailed database diagnostic message
+ */
+function getDatabaseDiagnostic($exception) {
+    $code = $exception->getCode();
+    $message = $exception->getMessage();
+    
+    // Try to test connection with current config to provide specific feedback
+    if (defined('DB_HOST') && defined('DB_NAME') && defined('DB_USER') && defined('DB_PASS')) {
+        $testResult = Database::testConnection(DB_HOST, DB_NAME, DB_USER, DB_PASS);
+        
+        if (!$testResult['success']) {
+            return [
+                'message' => 'Erreur de connexion à la base de données: ' . $testResult['message'],
+                'code' => $testResult['code'] ?? $code,
+                'suggestion' => 'Vérifiez la configuration de la base de données dans config/config.php'
+            ];
+        }
+    }
+    
+    // Fallback to generic database error with suggestion
+    return [
+        'message' => 'Erreur de connexion à la base de données. Vérifiez la configuration et les credentials.',
+        'code' => $code,
+        'suggestion' => 'Consultez les logs pour plus de détails ou testez la connexion dans la configuration.'
+    ];
 }
 
 // Generate new captcha if needed
@@ -523,6 +593,15 @@ $csrfToken = Security::generateCSRFToken();
                             
                             <button type="submit" class="btn btn-primary btn-block">
                                 Se connecter
+                            </button>
+                        </form>
+                        
+                        <!-- Database Test Form -->
+                        <form method="POST" action="" style="margin-top: 10px;">
+                            <input type="hidden" name="action" value="test_db">
+                            <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrfToken); ?>">
+                            <button type="submit" class="btn btn-secondary btn-block" style="background: #6c757d; font-size: 12px; padding: 8px;">
+                                🔧 Tester la connexion BDD
                             </button>
                         </form>
                         

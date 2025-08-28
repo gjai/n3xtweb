@@ -5,12 +5,23 @@ All notable changes to N3XT WEB will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-# Changelog
+## [2.3.1] - 2024-12-19
 
-All notable changes to N3XT WEB will be documented in this file.
+### Added
+- **🧹 Installation Cleanup**: Automatic removal of unnecessary directories after installation
+  - Fake `/admin` directory (security decoy) is now automatically removed after installation
+  - Original `/bo` directory is removed after random BO directory creation
+  - Only essential directories and the real BO remain after installation
+- **🔧 Enhanced Database Diagnostics**: Improved database connection error handling in Back Office
+  - Detailed database connection error messages with specific error codes
+  - Database connection test button in BO login form
+  - Clear error diagnostics for common database issues (access denied, unknown database, host issues)
+  - Configuration suggestions for quick resolution of database problems
 
-The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
-and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+### Fixed
+- Installation process now properly cleans up temporary and security decoy directories
+- Database connection errors in BO login now provide actionable error messages
+- Better error handling for database configuration issues
 
 ## [2.3.0] - 2024-12-19
 

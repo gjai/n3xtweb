@@ -162,6 +162,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     
                     // Create BO directory
                     if (InstallHelper::createBoDirectory($boDirectory)) {
+                        // Clean up installation directories
+                        $cleanupResult = InstallHelper::cleanupInstallation();
+                        if (!$cleanupResult['success']) {
+                            Logger::log('Some cleanup operations failed: ' . implode(', ', $cleanupResult['errors']), LOG_LEVEL_WARNING, 'install');
+                        }
+                        
                         // Send admin credentials email
                         EmailHelper::sendAdminCredentials($email, $adminUser, $adminPassword, $boDirectory, $language);
                         
