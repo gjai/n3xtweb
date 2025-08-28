@@ -36,7 +36,7 @@ class Database {
             $this->pdo = new PDO($dsn, DB_USER, DB_PASS, $options);
         } catch (PDOException $e) {
             error_log("Database connection failed: " . $e->getMessage());
-            die("Database connection failed. Please check configuration.");
+            throw new Exception("Database connection failed. Please check configuration. Error: " . $e->getMessage());
         }
     }
     
@@ -49,6 +49,50 @@ class Database {
     
     public function getConnection() {
         return $this->pdo;
+    }
+    
+    /**
+     * Test database connection
+     */
+    public static function testConnection($host, $name, $user, $pass) {
+        try {
+            $dsn = "mysql:host={$host};dbname={$name};charset=utf8mb4";
+            $options = [
+                PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+                PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+                PDO::ATTR_EMULATE_PREPARES => false,
+                PDO::ATTR_PERSISTENT => false
+            ];
+            
+            $pdo = new PDO($dsn, $user, $pass, $options);
+            
+            // Test basic query
+            $pdo->query("SELECT 1");
+            
+            return ['success' => true, 'message' => 'Connection successful'];
+        } catch (PDOException $e) {
+            $errorCode = $e->getCode();
+            $message = "Connection failed: ";
+            
+            switch ($errorCode) {
+                case 1045:
+                    $message .= "Access denied. Please check username and password.";
+                    break;
+                case 1049:
+                    $message .= "Unknown database '{$name}'. Please check database name.";
+                    break;
+                case 2002:
+                    $message .= "Can't connect to MySQL server on '{$host}'. Please check hostname.";
+                    break;
+                case 2005:
+                    $message .= "Unknown MySQL server host '{$host}'. Please check hostname.";
+                    break;
+                default:
+                    $message .= $e->getMessage();
+            }
+            
+            return ['success' => false, 'message' => $message, 'code' => $errorCode];
+        }
     }
     
     /**
@@ -214,14 +258,22 @@ class Logger {
         static $prefix = null;
         if ($prefix === null) {
             try {
-                // Try to get from constant first (during installation)
-                if (defined('TABLE_PREFIX')) {
+                // Try to get from environment/session first (during installation)
+                if (isset($_SESSION['db_config']['prefix'])) {
+                    $prefix = $_SESSION['db_config']['prefix'];
+                } elseif (defined('TABLE_PREFIX')) {
                     $prefix = TABLE_PREFIX;
                 } else {
-                    // Try to get from database
-                    $db = Database::getInstance();
-                    $result = $db->fetchOne("SELECT setting_value FROM n3xtweb_system_settings WHERE setting_key = 'table_prefix'");
-                    $prefix = $result ? $result['setting_value'] : 'n3xtweb_';
+                    // Try to get from database - check if we can connect first
+                    try {
+                        $db = Database::getInstance();
+                        // Try with default prefix first
+                        $result = $db->fetchOne("SELECT setting_value FROM n3xtweb_system_settings WHERE setting_key = 'table_prefix' LIMIT 1");
+                        $prefix = $result ? $result['setting_value'] : 'n3xtweb_';
+                    } catch (Exception $e) {
+                        // If database connection fails, fall back to default
+                        $prefix = 'n3xtweb_';
+                    }
                 }
             } catch (Exception $e) {
                 $prefix = 'n3xtweb_'; // Default fallback
@@ -387,9 +439,25 @@ class Session {
      */
     public static function start() {
         if (session_status() === PHP_SESSION_NONE) {
-            ini_set('session.cookie_httponly', 1);
-            ini_set('session.cookie_secure', isset($_SERVER['HTTPS']));
+            // Set secure cookie parameters
+            $secure = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off';
+            $httponly = true;
+            $samesite = 'Strict';
+            
+            // Set session cookie parameters
+            session_set_cookie_params([
+                'lifetime' => ADMIN_SESSION_TIMEOUT,
+                'path' => '/',
+                'domain' => '',
+                'secure' => $secure,
+                'httponly' => $httponly,
+                'samesite' => $samesite
+            ]);
+            
             ini_set('session.use_strict_mode', 1);
+            ini_set('session.cookie_httponly', 1);
+            ini_set('session.cookie_secure', $secure);
+            
             session_start();
             
             // Regenerate session ID periodically
@@ -416,18 +484,43 @@ class Session {
      * Login user
      */
     public static function login($username) {
+        // Clear any previous session data
+        session_unset();
+        
         $_SESSION['admin_logged_in'] = true;
         $_SESSION['admin_username'] = $username;
         $_SESSION['login_time'] = time();
+        $_SESSION['last_regeneration'] = time();
+        
+        // Regenerate session ID for security
         session_regenerate_id(true);
     }
     
     /**
-     * Logout user
+     * Logout user 
      */
     public static function logout() {
+        // Clear session data
         session_unset();
-        session_destroy();
+        
+        // Destroy session
+        if (session_status() === PHP_SESSION_ACTIVE) {
+            session_destroy();
+        }
+        
+        // Clear session cookie
+        $params = session_get_cookie_params();
+        setcookie(
+            session_name(),
+            '',
+            time() - 3600,
+            $params['path'],
+            $params['domain'],
+            $params['secure'],
+            $params['httponly']
+        );
+        
+        // Start new clean session
         session_start();
         session_regenerate_id(true);
     }
@@ -827,7 +920,7 @@ class InstallHelper {
      * Create Back Office directory
      */
     public static function createBoDirectory($dirName) {
-        $sourcePath = __DIR__ . '/../admin';
+        $sourcePath = __DIR__ . '/../bo';
         $targetPath = __DIR__ . '/../' . $dirName;
         
         if (!file_exists($sourcePath)) {
@@ -838,7 +931,28 @@ class InstallHelper {
             return false;
         }
         
-        return self::copyDirectory($sourcePath, $targetPath);
+        // Copy the bo directory to the new random directory name
+        if (!self::copyDirectory($sourcePath, $targetPath)) {
+            return false;
+        }
+        
+        // Create proper .htaccess for the BO directory
+        $htaccessContent = "# N3XT WEB - Back Office Access Control\n";
+        $htaccessContent .= "Options -Indexes\n";
+        $htaccessContent .= "RewriteEngine On\n";
+        $htaccessContent .= "RewriteCond %{REQUEST_FILENAME} !-f\n";
+        $htaccessContent .= "RewriteCond %{REQUEST_FILENAME} !-d\n";
+        $htaccessContent .= "RewriteRule ^(.*)$ index.php?route=$1 [QSA,L]\n";
+        $htaccessContent .= "\n# Security headers\n";
+        $htaccessContent .= "<IfModule mod_headers.c>\n";
+        $htaccessContent .= "    Header always set X-Content-Type-Options nosniff\n";
+        $htaccessContent .= "    Header always set X-Frame-Options DENY\n";
+        $htaccessContent .= "    Header always set X-XSS-Protection \"1; mode=block\"\n";
+        $htaccessContent .= "</IfModule>\n";
+        
+        file_put_contents($targetPath . '/.htaccess', $htaccessContent);
+        
+        return true;
     }
     
     /**

@@ -12,7 +12,61 @@ All notable changes to N3XT WEB will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.2.0] - 2024-12-19
+## [2.3.0] - 2024-12-19
+
+### Added
+- **🗄️ Database-Based Logging**: Complete migration from file-based to database logging
+  - New `access_logs` table for all login attempts and access events
+  - New `login_attempts` table for detailed login tracking with IP tracking
+  - Enhanced security monitoring with database storage
+  - File-based logging maintained as fallback for system issues
+- **⚙️ Configurable Security Settings**: Dynamic security configuration system
+  - Security features (captcha, login limits, IP blocking, IP tracking) disabled by default
+  - Configurable through Back Office settings stored in database
+  - Real-time security setting updates without code changes
+  - Backward compatibility with existing file-based fallbacks
+- **🔌 Enhanced Database Connection**: Improved connection handling and diagnostics
+  - Advanced connection testing with specific error code handling
+  - Database connection test functionality in Back Office
+  - Clear error messages for common connection issues (access denied, unknown database, host issues)
+  - Better diagnostic information for troubleshooting
+- **🎯 Default MySQL Configuration**: Pre-configured for nxtxyzylie618 hosting
+  - Default host: `nxtxyzylie618.mysql.db`
+  - Default database: `nxtxyzylie618_db`
+  - Default username: `nxtxyzylie618_user`
+  - Auto-populated installation form with hosting-specific defaults
+
+### Changed
+- **Database Configuration**: Updated default MySQL settings for optimized hosting
+- **Security System**: All security features now disabled by default and configurable
+- **Logging Architecture**: Primary logging moved to database with file fallback
+- **Installation Process**: Enhanced BO directory creation with proper .htaccess
+- **Session Management**: Improved session handling with better cookie security
+- **Back Office Structure**: Fixed BO directory copying from correct source (`bo/` instead of `admin/`)
+
+### Fixed
+- **Installation Process**: Fixed BO directory creation and placement issues
+- **Database Connection**: Enhanced error handling and connection diagnostics
+- **Session Management**: Improved session purging and cookie management
+- **Login Process**: Fixed post-installation login issues with better session handling
+- **Table Prefix Handling**: Dynamic table prefix resolution for better installation compatibility
+
+### Security
+- **Enhanced Session Security**: Improved cookie parameters and session handling
+- **Dynamic Security Configuration**: Security features configurable without code changes
+- **Database Security**: Prepared statements and proper error handling
+- **Access Logging**: Comprehensive database-based access tracking
+
+### Technical Details
+- New `SecuritySettings` class for dynamic configuration management
+- Enhanced `Database` class with connection testing and error diagnostics
+- Improved `Session` class with secure cookie handling
+- Database tables: `access_logs`, `login_attempts` with proper indexing
+- Enhanced `Logger` class with database storage and file fallback
+- Better error handling throughout the authentication system
+
+---
+
 
 ### Added
 - **🗑️ Complete Uninstall System**: Full system uninstallation with double confirmation

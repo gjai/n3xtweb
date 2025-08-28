@@ -120,12 +120,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $tablePrefix = Security::sanitizeInput($_POST['table_prefix'] ?? '');
             
             // Test database connection
-            try {
-                $dsn = "mysql:host={$dbHost};dbname={$dbName};charset=utf8mb4";
-                $pdo = new PDO($dsn, $dbUser, $dbPass, [
-                    PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION
-                ]);
-                
+            $testResult = Database::testConnection($dbHost, $dbName, $dbUser, $dbPass);
+            
+            if ($testResult['success']) {
                 // Store database config in session
                 $_SESSION['db_config'] = [
                     'host' => $dbHost,
@@ -136,8 +133,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 ];
                 
                 $step = 5;
-            } catch (PDOException $e) {
-                $error = 'Database connection failed: ' . $e->getMessage();
+            } else {
+                $error = $testResult['message'];
             }
             break;
             

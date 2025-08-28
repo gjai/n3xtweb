@@ -11,6 +11,9 @@ define('IN_N3XTWEB', true);
 
 require_once '../includes/functions.php';
 
+// Start secure session
+Session::start();
+
 // Check if already logged in
 if (Session::isLoggedIn()) {
     header('Location: index.php');
