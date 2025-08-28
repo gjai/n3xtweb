@@ -37,13 +37,24 @@ class Database {
                 PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
                 PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
                 PDO::ATTR_EMULATE_PREPARES => false,
-                PDO::ATTR_PERSISTENT => false
+                PDO::ATTR_PERSISTENT => false,
+                // Enhanced security options
+                PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT => false,
+                PDO::MYSQL_ATTR_MULTI_STATEMENTS => false,
+                PDO::ATTR_STRINGIFY_FETCHES => false,
+                PDO::ATTR_TIMEOUT => 30
             ];
             
             $this->pdo = new PDO($dsn, DB_USER, DB_PASS, $options);
+            
+            // Set SQL mode for stricter operation
+            $this->pdo->exec("SET sql_mode = 'STRICT_TRANS_TABLES,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION'");
+            
         } catch (PDOException $e) {
+            // Don't expose database details in production
+            $message = defined('DEBUG') && DEBUG ? $e->getMessage() : 'Database connection failed';
             error_log("Database connection failed: " . $e->getMessage());
-            throw new Exception("Database connection failed. Please check configuration. Error: " . $e->getMessage());
+            throw new Exception("Database connection failed. Please check configuration.");
         }
     }
     
@@ -103,16 +114,50 @@ class Database {
     }
     
     /**
-     * Execute a prepared statement with parameters
+     * Execute a prepared statement with parameters and enhanced security
      */
     public function execute($sql, $params = []) {
         try {
+            // Log potentially dangerous queries in development
+            if (defined('DEBUG') && DEBUG) {
+                $dangerousPatterns = ['/DELETE\s+FROM/i', '/DROP\s+TABLE/i', '/TRUNCATE/i', '/ALTER\s+TABLE/i'];
+                foreach ($dangerousPatterns as $pattern) {
+                    if (preg_match($pattern, $sql)) {
+                        error_log("Potentially dangerous SQL query executed: " . $sql);
+                        break;
+                    }
+                }
+            }
+            
             $stmt = $this->pdo->prepare($sql);
-            $stmt->execute($params);
+            
+            // Type checking for parameters
+            foreach ($params as $key => $value) {
+                if (is_int($value)) {
+                    $stmt->bindValue($key + 1, $value, PDO::PARAM_INT);
+                } elseif (is_bool($value)) {
+                    $stmt->bindValue($key + 1, $value, PDO::PARAM_BOOL);
+                } elseif (is_null($value)) {
+                    $stmt->bindValue($key + 1, null, PDO::PARAM_NULL);
+                } else {
+                    $stmt->bindValue($key + 1, $value, PDO::PARAM_STR);
+                }
+            }
+            
+            $stmt->execute();
             return $stmt;
+            
         } catch (PDOException $e) {
-            error_log("Database query failed: " . $e->getMessage());
-            throw $e;
+            // Enhanced error logging without exposing sensitive data
+            $errorId = uniqid('db_error_');
+            error_log("Database query failed [{$errorId}]: " . $e->getMessage() . " | SQL: " . substr($sql, 0, 200));
+            
+            // In production, don't expose SQL details
+            if (defined('DEBUG') && DEBUG) {
+                throw new Exception("Database error [{$errorId}]: " . $e->getMessage());
+            } else {
+                throw new Exception("Database operation failed. Error ID: {$errorId}");
+            }
         }
     }
     
@@ -175,10 +220,34 @@ class Security {
     }
     
     /**
-     * Sanitize input
+     * Sanitize input with enhanced validation
      */
-    public static function sanitizeInput($input) {
-        return htmlspecialchars(trim($input), ENT_QUOTES, 'UTF-8');
+    public static function sanitizeInput($input, $type = 'string') {
+        if (is_array($input)) {
+            return array_map([self::class, 'sanitizeInput'], $input);
+        }
+        
+        $input = trim($input);
+        
+        switch ($type) {
+            case 'email':
+                return filter_var($input, FILTER_SANITIZE_EMAIL);
+            case 'url':
+                return filter_var($input, FILTER_SANITIZE_URL);
+            case 'int':
+                return filter_var($input, FILTER_SANITIZE_NUMBER_INT);
+            case 'float':
+                return filter_var($input, FILTER_SANITIZE_NUMBER_FLOAT, FILTER_FLAG_ALLOW_FRACTION);
+            case 'filename':
+                // Enhanced filename sanitization
+                $input = preg_replace('/[^a-zA-Z0-9._-]/', '', $input);
+                return substr($input, 0, 255); // Limit filename length
+            case 'sql':
+                // For SQL LIKE queries - escape wildcards
+                return str_replace(['%', '_'], ['\\%', '\\_'], $input);
+            default:
+                return htmlspecialchars($input, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+        }
     }
     
     /**
@@ -189,10 +258,52 @@ class Security {
     }
     
     /**
+     * Validate password strength
+     */
+    public static function validatePasswordStrength($password) {
+        $errors = [];
+        
+        if (strlen($password) < PASSWORD_MIN_LENGTH) {
+            $errors[] = "Password must be at least " . PASSWORD_MIN_LENGTH . " characters long";
+        }
+        
+        if (!preg_match('/[A-Z]/', $password)) {
+            $errors[] = "Password must contain at least one uppercase letter";
+        }
+        
+        if (!preg_match('/[a-z]/', $password)) {
+            $errors[] = "Password must contain at least one lowercase letter";
+        }
+        
+        if (!preg_match('/[0-9]/', $password)) {
+            $errors[] = "Password must contain at least one number";
+        }
+        
+        if (!preg_match('/[^A-Za-z0-9]/', $password)) {
+            $errors[] = "Password must contain at least one special character";
+        }
+        
+        return empty($errors) ? true : $errors;
+    }
+    
+    /**
      * Generate secure password hash
      */
     public static function hashPassword($password) {
-        return password_hash($password, PASSWORD_ARGON2ID);
+        // Validate password before hashing
+        $validation = self::validatePasswordStrength($password);
+        if ($validation !== true) {
+            throw new InvalidArgumentException('Password does not meet security requirements: ' . implode(', ', $validation));
+        }
+        
+        // Use stronger options for Argon2ID
+        $options = [
+            'memory_cost' => 65536, // 64 MB
+            'time_cost'   => 4,     // 4 iterations
+            'threads'     => 3,     // 3 threads
+        ];
+        
+        return password_hash($password, PASSWORD_ARGON2ID, $options);
     }
     
     /**
@@ -203,6 +314,19 @@ class Security {
     }
     
     /**
+     * Check if password hash needs rehashing
+     */
+    public static function needsRehash($hash) {
+        $options = [
+            'memory_cost' => 65536,
+            'time_cost'   => 4,
+            'threads'     => 3,
+        ];
+        
+        return password_needs_rehash($hash, PASSWORD_ARGON2ID, $options);
+    }
+    
+    /**
      * Generate random string
      */
     public static function generateRandomString($length = 32) {
@@ -210,14 +334,101 @@ class Security {
     }
     
     /**
-     * Set security headers
+     * Set comprehensive security headers
      */
     public static function setSecurityHeaders() {
+        // Prevent MIME type sniffing
         header('X-Content-Type-Options: nosniff');
+        
+        // Prevent clickjacking
         header('X-Frame-Options: DENY');
+        
+        // XSS protection
         header('X-XSS-Protection: 1; mode=block');
+        
+        // Referrer policy
         header('Referrer-Policy: strict-origin-when-cross-origin');
-        header('Content-Security-Policy: default-src \'self\'; script-src \'self\' \'unsafe-inline\'; style-src \'self\' \'unsafe-inline\'; img-src \'self\' data:; connect-src \'self\';');
+        
+        // Content Security Policy (enhanced)
+        $csp = "default-src 'self'; " .
+               "script-src 'self' 'unsafe-inline' 'unsafe-eval'; " .
+               "style-src 'self' 'unsafe-inline'; " .
+               "img-src 'self' data: blob:; " .
+               "font-src 'self'; " .
+               "connect-src 'self'; " .
+               "media-src 'self'; " .
+               "object-src 'none'; " .
+               "frame-src 'none'; " .
+               "base-uri 'self'; " .
+               "form-action 'self'";
+        header("Content-Security-Policy: {$csp}");
+        
+        // HSTS for HTTPS
+        if (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') {
+            header('Strict-Transport-Security: max-age=31536000; includeSubDomains; preload');
+        }
+        
+        // Permissions Policy (formerly Feature Policy)
+        header('Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=()');
+        
+        // Prevent caching of sensitive pages
+        if (strpos($_SERVER['REQUEST_URI'] ?? '', '/bo/') !== false || 
+            strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/') !== false) {
+            header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
+            header('Pragma: no-cache');
+            header('Expires: 0');
+        }
+    }
+    
+    /**
+     * Validate and sanitize file uploads
+     */
+    public static function validateFileUpload($file, $allowedTypes = [], $maxSize = null) {
+        $errors = [];
+        
+        if (!isset($file['tmp_name']) || !is_uploaded_file($file['tmp_name'])) {
+            $errors[] = 'No valid file uploaded';
+            return $errors;
+        }
+        
+        if ($file['error'] !== UPLOAD_ERR_OK) {
+            $uploadErrors = [
+                UPLOAD_ERR_INI_SIZE => 'File exceeds PHP upload_max_filesize',
+                UPLOAD_ERR_FORM_SIZE => 'File exceeds form MAX_FILE_SIZE',
+                UPLOAD_ERR_PARTIAL => 'File was only partially uploaded',
+                UPLOAD_ERR_NO_FILE => 'No file was uploaded',
+                UPLOAD_ERR_NO_TMP_DIR => 'Missing temporary folder',
+                UPLOAD_ERR_CANT_WRITE => 'Failed to write file to disk',
+                UPLOAD_ERR_EXTENSION => 'File upload stopped by extension'
+            ];
+            $errors[] = $uploadErrors[$file['error']] ?? 'Unknown upload error';
+            return $errors;
+        }
+        
+        // Check file size
+        if ($maxSize && $file['size'] > $maxSize) {
+            $errors[] = 'File size exceeds maximum allowed size';
+        }
+        
+        // Check MIME type
+        if (!empty($allowedTypes)) {
+            $fileInfo = finfo_open(FILEINFO_MIME_TYPE);
+            $mimeType = finfo_file($fileInfo, $file['tmp_name']);
+            finfo_close($fileInfo);
+            
+            if (!in_array($mimeType, $allowedTypes)) {
+                $errors[] = 'File type not allowed';
+            }
+        }
+        
+        // Check for dangerous file extensions
+        $dangerousExtensions = ['php', 'phtml', 'php3', 'php4', 'php5', 'pl', 'py', 'jsp', 'asp', 'aspx', 'sh', 'cgi'];
+        $extension = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+        if (in_array($extension, $dangerousExtensions)) {
+            $errors[] = 'File extension not allowed for security reasons';
+        }
+        
+        return $errors;
     }
 }
 
@@ -227,7 +438,7 @@ class Security {
 class Logger {
     
     /**
-     * Write log entry
+     * Write log entry with improved formatting and rotation
      */
     public static function log($message, $level = LOG_LEVEL_INFO, $logFile = 'system') {
         if ($level > DEFAULT_LOG_LEVEL) {
@@ -243,10 +454,22 @@ class Logger {
         
         $levelName = $levelNames[$level] ?? 'UNKNOWN';
         $timestamp = date('Y-m-d H:i:s');
-        $ip = $_SERVER['REMOTE_ADDR'] ?? 'unknown';
-        $userAgent = $_SERVER['HTTP_USER_AGENT'] ?? 'unknown';
+        $ip = self::getClientIP();
+        $userAgent = substr($_SERVER['HTTP_USER_AGENT'] ?? 'unknown', 0, 100); // Limit user agent length
         
-        $logEntry = "[{$timestamp}] [{$levelName}] IP: {$ip} | {$message} | User-Agent: {$userAgent}" . PHP_EOL;
+        // Sanitize message to prevent log injection
+        $message = preg_replace('/[\r\n]/', ' ', $message);
+        $message = substr($message, 0, 500); // Limit message length
+        
+        $logEntry = sprintf(
+            "[%s] [%s] [IP:%s] %s | UA:%s%s",
+            $timestamp,
+            $levelName,
+            $ip,
+            $message,
+            $userAgent,
+            PHP_EOL
+        );
         
         $logPath = LOG_PATH . "/{$logFile}.log";
         
@@ -255,7 +478,62 @@ class Logger {
             mkdir(LOG_PATH, 0755, true);
         }
         
+        // Rotate log file if it's too large (> 10MB)
+        if (file_exists($logPath) && filesize($logPath) > 10 * 1024 * 1024) {
+            self::rotateLogFile($logPath);
+        }
+        
         file_put_contents($logPath, $logEntry, FILE_APPEND | LOCK_EX);
+    }
+    
+    /**
+     * Get client IP address with proxy support
+     */
+    private static function getClientIP() {
+        $headers = [
+            'HTTP_CF_CONNECTING_IP',     // Cloudflare
+            'HTTP_CLIENT_IP',            // Proxy
+            'HTTP_X_FORWARDED_FOR',      // Load balancer/proxy
+            'HTTP_X_FORWARDED',          // Proxy
+            'HTTP_X_CLUSTER_CLIENT_IP',  // Cluster
+            'HTTP_FORWARDED_FOR',        // Proxy
+            'HTTP_FORWARDED',            // Proxy
+            'REMOTE_ADDR'                // Standard
+        ];
+        
+        foreach ($headers as $header) {
+            if (!empty($_SERVER[$header])) {
+                $ip = $_SERVER[$header];
+                // Handle comma-separated list (X-Forwarded-For)
+                if (strpos($ip, ',') !== false) {
+                    $ip = trim(explode(',', $ip)[0]);
+                }
+                // Validate IP
+                if (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE)) {
+                    return $ip;
+                }
+            }
+        }
+        
+        return $_SERVER['REMOTE_ADDR'] ?? 'unknown';
+    }
+    
+    /**
+     * Rotate log file when it gets too large
+     */
+    private static function rotateLogFile($logPath) {
+        $rotatedPath = $logPath . '.' . date('Y-m-d-H-i-s');
+        rename($logPath, $rotatedPath);
+        
+        // Compress old log file if gzip is available
+        if (function_exists('gzopen')) {
+            $gz = gzopen($rotatedPath . '.gz', 'wb9');
+            if ($gz) {
+                gzwrite($gz, file_get_contents($rotatedPath));
+                gzclose($gz);
+                unlink($rotatedPath);
+            }
+        }
     }
     
     /**
@@ -442,10 +720,20 @@ class SecuritySettings {
 class Session {
     
     /**
-     * Start secure session
+     * Start secure session with enhanced security
      */
     public static function start() {
         if (session_status() === PHP_SESSION_NONE) {
+            // Enhanced session security settings
+            ini_set('session.use_strict_mode', 1);
+            ini_set('session.use_only_cookies', 1);
+            ini_set('session.use_trans_sid', 0);
+            ini_set('session.cookie_httponly', 1);
+            ini_set('session.entropy_length', 32);
+            ini_set('session.hash_function', 'sha256');
+            ini_set('session.hash_bits_per_character', 6);
+            ini_set('session.sid_length', 48);
+            
             // Set secure cookie parameters
             $secure = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off';
             $httponly = true;
@@ -453,7 +741,7 @@ class Session {
             
             // Set session cookie parameters
             session_set_cookie_params([
-                'lifetime' => ADMIN_SESSION_TIMEOUT,
+                'lifetime' => defined('ADMIN_SESSION_TIMEOUT') ? ADMIN_SESSION_TIMEOUT : SESSION_LIFETIME,
                 'path' => '/',
                 'domain' => '',
                 'secure' => $secure,
@@ -461,15 +749,18 @@ class Session {
                 'samesite' => $samesite
             ]);
             
-            ini_set('session.use_strict_mode', 1);
-            ini_set('session.cookie_httponly', 1);
-            ini_set('session.cookie_secure', $secure);
+            // Set session name to something non-standard
+            session_name('N3XT_SESSID');
             
             session_start();
+            
+            // Enhanced session validation
+            self::validateSession();
             
             // Regenerate session ID periodically
             if (!isset($_SESSION['last_regeneration'])) {
                 $_SESSION['last_regeneration'] = time();
+                $_SESSION['session_fingerprint'] = self::generateFingerprint();
             } elseif (time() - $_SESSION['last_regeneration'] > 300) { // 5 minutes
                 session_regenerate_id(true);
                 $_SESSION['last_regeneration'] = time();
@@ -478,29 +769,120 @@ class Session {
     }
     
     /**
-     * Check if user is logged in
+     * Generate session fingerprint for additional security
      */
-    public static function isLoggedIn() {
-        return isset($_SESSION['admin_logged_in']) && 
-               $_SESSION['admin_logged_in'] === true &&
-               isset($_SESSION['login_time']) &&
-               (time() - $_SESSION['login_time']) < ADMIN_SESSION_TIMEOUT;
+    private static function generateFingerprint() {
+        $userAgent = $_SERVER['HTTP_USER_AGENT'] ?? '';
+        $acceptLanguage = $_SERVER['HTTP_ACCEPT_LANGUAGE'] ?? '';
+        $acceptEncoding = $_SERVER['HTTP_ACCEPT_ENCODING'] ?? '';
+        
+        return hash('sha256', $userAgent . $acceptLanguage . $acceptEncoding);
     }
     
     /**
-     * Login user
+     * Validate session integrity
+     */
+    private static function validateSession() {
+        // Check session fingerprint
+        if (isset($_SESSION['session_fingerprint'])) {
+            $currentFingerprint = self::generateFingerprint();
+            if ($_SESSION['session_fingerprint'] !== $currentFingerprint) {
+                self::destroy();
+                return false;
+            }
+        }
+        
+        // Check for session hijacking attempts
+        if (isset($_SESSION['remote_addr'])) {
+            if ($_SESSION['remote_addr'] !== ($_SERVER['REMOTE_ADDR'] ?? '')) {
+                self::destroy();
+                return false;
+            }
+        } else {
+            $_SESSION['remote_addr'] = $_SERVER['REMOTE_ADDR'] ?? '';
+        }
+        
+        return true;
+    }
+    
+    /**
+     * Destroy session completely
+     */
+    public static function destroy() {
+        if (session_status() === PHP_SESSION_ACTIVE) {
+            session_unset();
+            session_destroy();
+            
+            // Clear session cookie
+            $params = session_get_cookie_params();
+            setcookie(
+                session_name(),
+                '',
+                time() - 3600,
+                $params['path'],
+                $params['domain'],
+                $params['secure'],
+                $params['httponly']
+            );
+        }
+    }
+    
+    /**
+     * Check if user is logged in with enhanced validation
+     */
+    public static function isLoggedIn() {
+        if (!isset($_SESSION['admin_logged_in']) || $_SESSION['admin_logged_in'] !== true) {
+            return false;
+        }
+        
+        if (!isset($_SESSION['login_time'])) {
+            return false;
+        }
+        
+        $sessionTimeout = defined('ADMIN_SESSION_TIMEOUT') ? ADMIN_SESSION_TIMEOUT : SESSION_LIFETIME;
+        if ((time() - $_SESSION['login_time']) >= $sessionTimeout) {
+            self::logout();
+            return false;
+        }
+        
+        // Validate session integrity
+        if (!self::validateSession()) {
+            return false;
+        }
+        
+        return true;
+    }
+    
+    /**
+     * Login user with enhanced security
      */
     public static function login($username) {
-        // Clear any previous session data
+        // Sanitize username
+        $username = Security::sanitizeInput($username);
+        
+        // Clear any previous session data but preserve security tokens
+        $csrfToken = $_SESSION['csrf_token'] ?? null;
+        $csrfTime = $_SESSION['csrf_time'] ?? null;
         session_unset();
+        
+        // Restore CSRF token if it was valid
+        if ($csrfToken && $csrfTime && (time() - $csrfTime) < CSRF_TOKEN_LIFETIME) {
+            $_SESSION['csrf_token'] = $csrfToken;
+            $_SESSION['csrf_time'] = $csrfTime;
+        }
         
         $_SESSION['admin_logged_in'] = true;
         $_SESSION['admin_username'] = $username;
         $_SESSION['login_time'] = time();
         $_SESSION['last_regeneration'] = time();
+        $_SESSION['session_fingerprint'] = self::generateFingerprint();
+        $_SESSION['remote_addr'] = $_SERVER['REMOTE_ADDR'] ?? '';
         
         // Regenerate session ID for security
         session_regenerate_id(true);
+        
+        // Log successful login
+        Logger::logAccess($username, true, 'User logged in successfully');
     }
     
     /**
@@ -1159,8 +1541,382 @@ class LanguageHelper {
     }
 }
 
-// Initialize security headers
-Security::setSecurityHeaders();
+/**
+ * Simple file-based caching system for performance optimization
+ */
+class Cache {
+    private static $cacheDir = null;
+    
+    /**
+     * Initialize cache directory
+     */
+    private static function initCacheDir() {
+        if (self::$cacheDir === null) {
+            self::$cacheDir = ROOT_PATH . '/cache';
+            if (!is_dir(self::$cacheDir)) {
+                mkdir(self::$cacheDir, 0755, true);
+            }
+        }
+    }
+    
+    /**
+     * Generate cache key
+     */
+    private static function generateKey($key) {
+        return hash('sha256', $key);
+    }
+    
+    /**
+     * Store data in cache
+     */
+    public static function set($key, $data, $ttl = 3600) {
+        self::initCacheDir();
+        
+        $cacheKey = self::generateKey($key);
+        $cacheFile = self::$cacheDir . '/' . $cacheKey . '.cache';
+        
+        $cacheData = [
+            'data' => $data,
+            'expires' => time() + $ttl,
+            'created' => time()
+        ];
+        
+        $result = file_put_contents($cacheFile, serialize($cacheData), LOCK_EX);
+        return $result !== false;
+    }
+    
+    /**
+     * Retrieve data from cache
+     */
+    public static function get($key, $default = null) {
+        self::initCacheDir();
+        
+        $cacheKey = self::generateKey($key);
+        $cacheFile = self::$cacheDir . '/' . $cacheKey . '.cache';
+        
+        if (!file_exists($cacheFile)) {
+            return $default;
+        }
+        
+        $cacheData = unserialize(file_get_contents($cacheFile));
+        
+        if (!$cacheData || !isset($cacheData['expires'])) {
+            unlink($cacheFile);
+            return $default;
+        }
+        
+        if (time() > $cacheData['expires']) {
+            unlink($cacheFile);
+            return $default;
+        }
+        
+        return $cacheData['data'];
+    }
+    
+    /**
+     * Cache with callback for automatic caching
+     */
+    public static function remember($key, $ttl, callable $callback) {
+        $data = self::get($key);
+        
+        if ($data === null) {
+            $data = $callback();
+            self::set($key, $data, $ttl);
+        }
+        
+        return $data;
+    }
+    
+    /**
+     * Clear all cache
+     */
+    public static function clear() {
+        self::initCacheDir();
+        
+        $files = glob(self::$cacheDir . '/*.cache');
+        $cleared = 0;
+        
+        foreach ($files as $file) {
+            if (unlink($file)) {
+                $cleared++;
+            }
+        }
+        
+        return $cleared;
+    }
+}
+
+/**
+ * Performance monitoring and optimization utilities
+ */
+class Performance {
+    private static $timers = [];
+    
+    /**
+     * Start performance timer
+     */
+    public static function startTimer($name) {
+        self::$timers[$name] = [
+            'start' => microtime(true),
+            'memory_start' => memory_get_usage(true)
+        ];
+    }
+    
+    /**
+     * End performance timer
+     */
+    public static function endTimer($name) {
+        if (!isset(self::$timers[$name])) {
+            return null;
+        }
+        
+        $timer = self::$timers[$name];
+        $endTime = microtime(true);
+        $endMemory = memory_get_usage(true);
+        
+        return [
+            'execution_time' => $endTime - $timer['start'],
+            'memory_used' => $endMemory - $timer['memory_start'],
+            'peak_memory' => memory_get_peak_usage(true)
+        ];
+    }
+    
+    /**
+     * Optimize database queries with caching
+     */
+    public static function cachedQuery($db, $sql, $params = [], $ttl = 300) {
+        $cacheKey = 'query_' . hash('sha256', $sql . serialize($params));
+        
+        return Cache::remember($cacheKey, $ttl, function() use ($db, $sql, $params) {
+            return $db->fetchAll($sql, $params);
+        });
+    }
+}
+
+/**
+ * Asset optimization utilities
+ */
+class AssetOptimizer {
+    
+    /**
+     * Minify CSS content
+     */
+    public static function minifyCSS($css) {
+        // Remove comments
+        $css = preg_replace('/\/\*.*?\*\//s', '', $css);
+        
+        // Remove unnecessary whitespace
+        $css = preg_replace('/\s+/', ' ', $css);
+        
+        // Remove whitespace around specific characters
+        $css = preg_replace('/\s*([{}:;,>+~])\s*/', '$1', $css);
+        
+        // Remove leading/trailing whitespace
+        $css = trim($css);
+        
+        // Remove empty rules
+        $css = preg_replace('/[^{}]*{\s*}/', '', $css);
+        
+        return $css;
+    }
+    
+    /**
+     * Minify JavaScript content
+     */
+    public static function minifyJS($js) {
+        // Remove single line comments
+        $js = preg_replace('/\/\/.*$/m', '', $js);
+        
+        // Remove multi-line comments
+        $js = preg_replace('/\/\*.*?\*\//s', '', $js);
+        
+        // Remove unnecessary whitespace
+        $js = preg_replace('/\s+/', ' ', $js);
+        
+        // Remove whitespace around operators
+        $js = preg_replace('/\s*([=+\-*\/{}();,:])\s*/', '$1', $js);
+        
+        return trim($js);
+    }
+    
+    /**
+     * Combine and cache CSS files
+     */
+    public static function combineCSS($files, $outputFile = null) {
+        $combinedCSS = '';
+        $lastModified = 0;
+        
+        foreach ($files as $file) {
+            if (file_exists($file)) {
+                $content = file_get_contents($file);
+                $combinedCSS .= $content . "\n";
+                $lastModified = max($lastModified, filemtime($file));
+            }
+        }
+        
+        // Minify combined CSS
+        $combinedCSS = self::minifyCSS($combinedCSS);
+        
+        if ($outputFile) {
+            file_put_contents($outputFile, $combinedCSS);
+            touch($outputFile, $lastModified);
+        }
+        
+        return $combinedCSS;
+    }
+    
+    /**
+     * Generate integrity hash for assets
+     */
+    public static function generateIntegrity($content) {
+        return 'sha384-' . base64_encode(hash('sha384', $content, true));
+    }
+    
+    /**
+     * Get asset with cache busting
+     */
+    public static function getAssetUrl($file) {
+        if (file_exists($file)) {
+            $mtime = filemtime($file);
+            return $file . '?v=' . $mtime;
+        }
+        return $file;
+    }
+}
+
+/**
+ * System health and optimization utilities
+ */
+class SystemHealth {
+    
+    /**
+     * Check overall system health
+     */
+    public static function checkHealth() {
+        $checks = [];
+        
+        // Database connectivity
+        try {
+            $db = Database::getInstance();
+            $checks['database'] = ['status' => 'OK', 'message' => 'Database connection successful'];
+        } catch (Exception $e) {
+            $checks['database'] = ['status' => 'ERROR', 'message' => 'Database connection failed'];
+        }
+        
+        // File permissions
+        $criticalDirs = [LOG_PATH, BACKUP_PATH, UPLOAD_PATH];
+        $permissionErrors = [];
+        
+        foreach ($criticalDirs as $dir) {
+            if (!is_dir($dir)) {
+                mkdir($dir, 0755, true);
+            }
+            if (!is_writable($dir)) {
+                $permissionErrors[] = $dir;
+            }
+        }
+        
+        $checks['permissions'] = empty($permissionErrors) 
+            ? ['status' => 'OK', 'message' => 'All directories writable']
+            : ['status' => 'WARNING', 'message' => 'Some directories not writable: ' . implode(', ', $permissionErrors)];
+        
+        // Security settings
+        $securityIssues = [];
+        
+        if (DB_PASS === 'secure_password') {
+            $securityIssues[] = 'Default database password detected';
+        }
+        
+        if (!defined('DEBUG') || DEBUG === true) {
+            $securityIssues[] = 'Debug mode may be enabled';
+        }
+        
+        $checks['security'] = empty($securityIssues)
+            ? ['status' => 'OK', 'message' => 'Security settings appear correct']
+            : ['status' => 'WARNING', 'message' => implode(', ', $securityIssues)];
+        
+        // Performance metrics
+        $metrics = Performance::getSystemMetrics();
+        $memoryUsage = $metrics['memory_usage'] / 1024 / 1024; // MB
+        
+        $checks['performance'] = $memoryUsage < 128 
+            ? ['status' => 'OK', 'message' => sprintf('Memory usage: %.2f MB', $memoryUsage)]
+            : ['status' => 'WARNING', 'message' => sprintf('High memory usage: %.2f MB', $memoryUsage)];
+        
+        return $checks;
+    }
+    
+    /**
+     * Clean up system files
+     */
+    public static function cleanup() {
+        $cleaned = [];
+        
+        // Clean expired cache
+        if (defined('ENABLE_CACHING') && ENABLE_CACHING) {
+            $cacheStats = Cache::getStats();
+            if ($cacheStats['expired_entries'] > 0) {
+                Cache::clear();
+                $cleaned[] = 'Cleared ' . $cacheStats['expired_entries'] . ' expired cache entries';
+            }
+        }
+        
+        // Clean old log files (older than 30 days)
+        if (is_dir(LOG_PATH)) {
+            $oldLogs = glob(LOG_PATH . '/*.log.*');
+            $threshold = time() - (30 * 24 * 60 * 60); // 30 days
+            
+            foreach ($oldLogs as $logFile) {
+                if (filemtime($logFile) < $threshold) {
+                    unlink($logFile);
+                    $cleaned[] = 'Removed old log file: ' . basename($logFile);
+                }
+            }
+        }
+        
+        // Clean temporary files
+        $tempFiles = glob(sys_get_temp_dir() . '/n3xtweb_*');
+        foreach ($tempFiles as $tempFile) {
+            if (is_file($tempFile) && time() - filemtime($tempFile) > 3600) { // 1 hour old
+                unlink($tempFile);
+                $cleaned[] = 'Removed temporary file: ' . basename($tempFile);
+            }
+        }
+        
+        return $cleaned;
+    }
+    
+    /**
+     * Optimize database tables
+     */
+    public static function optimizeDatabase() {
+        try {
+            $db = Database::getInstance();
+            $prefix = Logger::getTablePrefix();
+            
+            // Get all tables with the prefix
+            $tables = $db->fetchAll("SHOW TABLES LIKE '{$prefix}%'");
+            $optimized = [];
+            
+            foreach ($tables as $table) {
+                $tableName = array_values($table)[0];
+                $db->execute("OPTIMIZE TABLE `{$tableName}`");
+                $optimized[] = $tableName;
+            }
+            
+            return $optimized;
+            
+        } catch (Exception $e) {
+            Logger::log("Database optimization failed: " . $e->getMessage(), LOG_LEVEL_ERROR);
+            return false;
+        }
+    }
+}
+
+// Initialize security headers if enabled
+if (defined('ENABLE_SECURITY_HEADERS') && ENABLE_SECURITY_HEADERS) {
+    Security::setSecurityHeaders();
+}
 
 // Start session
 Session::start();

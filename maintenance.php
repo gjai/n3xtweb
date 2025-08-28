@@ -29,9 +29,14 @@ if ($isAdmin && !isset($_GET['preview'])) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="robots" content="noindex, nofollow">
+    <meta name="description" content="Site en maintenance - N3XT WEB">
+    
+    <!-- Preload critical resources -->
+    <link rel="preload" href="<?php echo AssetOptimizer::getAssetUrl('assets/css/style.css'); ?>" as="style">
+    
     <link rel="icon" type="image/png" href="fav.png">
     <title>N3XT WEB - Maintenance en cours</title>
-    <link rel="stylesheet" href="assets/css/style.css">
+    <link rel="stylesheet" href="<?php echo AssetOptimizer::getAssetUrl('assets/css/style.css'); ?>">
     <style>
         body {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
