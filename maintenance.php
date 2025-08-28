@@ -17,9 +17,9 @@ if (!MAINTENANCE_MODE && !isset($_GET['preview'])) {
     exit;
 }
 
-// If admin is logged in and no preview requested, redirect to admin panel
+// If admin is logged in and no preview requested, redirect to index
 if ($isAdmin && !isset($_GET['preview'])) {
-    header('Location: admin/index.php');
+    header('Location: index.php');
     exit;
 }
 ?>
@@ -229,7 +229,6 @@ if ($isAdmin && !isset($_GET['preview'])) {
     <?php if ($isAdmin): ?>
         <div class="admin-notice">
             👤 Admin Preview Mode
-            <a href="admin/index.php">Go to Admin Panel</a>
         </div>
     <?php endif; ?>
     
@@ -349,7 +348,7 @@ if ($isAdmin && !isset($_GET['preview'])) {
                     z-index: 1001;
                     animation: fadeInUp 0.5s ease-out;
                 `;
-                hint.textContent = '💡 Hint: Try accessing /admin/login.php directly';
+                hint.textContent = '💡 Hint: Site under maintenance, please check back later';
                 document.body.appendChild(hint);
                 
                 setTimeout(() => {

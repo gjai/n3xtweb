@@ -316,7 +316,6 @@ if (defined('ADMIN_PATH')) {
                 <a href="index.php" class="active">Accueil</a>
                 <a href="#client-area">Espace Pro</a>
                 <a href="#boutique" style="display: none;">Boutique</a>
-                <a href="<?php echo $adminDirectory; ?>/login.php">Connexion</a>
             </nav>
             <div class="logo">
                 <?php 
