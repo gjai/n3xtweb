@@ -1,4 +1,4 @@
-# N3XT Communication - Robots exclusion
+# N3XT Communication - Robots exclusion for OVH shared hosting
 User-agent: *
 
 # Block access to admin and sensitive areas
@@ -10,10 +10,39 @@ Disallow: /includes/
 Disallow: /install/
 Disallow: /maintenance/
 
-# Block access to sensitive files
+# Block access to uploads directory to prevent indexing of user content
+Disallow: /uploads/
+
+# Block access to sensitive files and patterns
 Disallow: /*.log
 Disallow: /*.sql
 Disallow: /*.bak
+Disallow: /*.backup
+Disallow: /*.old
+Disallow: /*.tmp
 Disallow: /*.conf
 Disallow: /.htaccess
+Disallow: /.htpasswd
 Disallow: /config.php
+Disallow: /.env
+Disallow: /.git/
+Disallow: /.gitignore
+
+# Block access to installation and maintenance files
+Disallow: /install.php
+Disallow: /maintenance.php
+
+# Block access to development files
+Disallow: /*.inc
+Disallow: /*.swp
+Disallow: /*.swo
+Disallow: /*~
+
+# Allow specific public files if needed
+Allow: /index.php
+Allow: /assets/
+Allow: /robots.txt
+Allow: /sitemap.xml
+
+# Crawl delay for better server performance on shared hosting
+Crawl-delay: 10

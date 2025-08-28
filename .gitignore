@@ -12,6 +12,7 @@ backups/*.sql
 # Upload files
 uploads/*
 !uploads/.gitkeep
+!uploads/.htaccess
 
 # Temporary files
 tmp/*

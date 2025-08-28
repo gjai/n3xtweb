@@ -1,0 +1,16 @@
+# OVH Shared Hosting PHP Configuration
+# This file forces specific PHP settings for optimal N3XT Communication performance
+
+# Force PHP version - Use the latest stable version supported by OVH
+app.engine=php
+app.engine.version=8.2
+
+# Set PHP environment to production for better performance and security
+environment=production
+
+# Enable HTTP/2 support if available
+http.engine=apache
+
+# Force HTTPS redirection (recommended for security)
+# Uncomment the following line if you have SSL/TLS certificate configured
+# container.image=php-8.2-apache-ssl

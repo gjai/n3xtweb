@@ -12,11 +12,37 @@ if (!defined('N3XT_SECURE')) {
 }
 
 // Database configuration (to be configured during installation)
-define('DB_HOST', 'localhost');
-define('DB_NAME', 'n3xt_communication');
-define('DB_USER', 'n3xt_user');
-define('DB_PASS', 'secure_password');
+// For OVH shared hosting, use the database credentials provided in your OVH control panel
+define('DB_HOST', 'localhost'); // Often 'mysql51-66.perso' or similar for OVH
+define('DB_NAME', 'n3xt_communication'); // Your database name from OVH
+define('DB_USER', 'n3xt_user'); // Your database username from OVH
+define('DB_PASS', 'secure_password'); // Your database password from OVH
 define('DB_CHARSET', 'utf8mb4');
+
+// PDO Database Connection Example for OVH Shared Hosting
+// Uncomment and modify the following function to use PDO instead of mysqli
+/*
+function getPDOConnection() {
+    try {
+        $dsn = "mysql:host=" . DB_HOST . ";dbname=" . DB_NAME . ";charset=" . DB_CHARSET;
+        $options = [
+            PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
+            PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+            PDO::ATTR_EMULATE_PREPARES   => false,
+            PDO::ATTR_PERSISTENT         => false, // Recommended for shared hosting
+            PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES " . DB_CHARSET,
+            PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT => false // May be needed for some OVH configurations
+        ];
+        
+        $pdo = new PDO($dsn, DB_USER, DB_PASS, $options);
+        return $pdo;
+    } catch (PDOException $e) {
+        // Log error securely (don't expose database credentials)
+        error_log('Database connection failed: ' . $e->getMessage());
+        throw new Exception('Database connection failed. Please check your configuration.');
+    }
+}
+*/
 
 // Security settings
 define('ADMIN_SESSION_TIMEOUT', 3600); // 1 hour
