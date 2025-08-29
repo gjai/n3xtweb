@@ -79,5 +79,62 @@ En cas de régression détectée, la modification doit être annulée ou corrig�
 
 ---
 
-## 9. Historique des évolutions
+## 9. Workflow de modularisation systématique
+
+### Découpage modulaire obligatoire
+Tout développement sur N3XT WEB doit suivre une approche modulaire systématique :
+
+1. **Analyse du besoin** : Chaque fonctionnalité doit être évaluée pour son potentiel modulaire
+2. **Utilisation du CHECKLIST_DECOUPAGE.md** : Validation complète de tous les points
+3. **Structure standardisée** : Respect de l'arborescence définie (controller.php, model.php, widgets/, views/, README.md, CHECKLIST.md)
+4. **Documentation systématique** : Usage du template README_modele.md pour chaque nouveau module
+5. **Validation sécurité** : Audit complet avant intégration
+6. **Tests de non-régression** : Validation de l'impact sur l'existant
+
+### Liste des modules actifs
+- **SecurityManager** : Gestion de la sécurité, détection de menaces, audit
+- **EventManager** : Gestion des événements système et logs
+- **UpdateManager** : Gestion des mises à jour et déploiements
+- **NotificationManager** : Système de notifications
+- **BackupManager** : Sauvegarde et restauration
+- **MaintenanceManager** : Maintenance automatique et monitoring
+- **Dashboard** : Tableau de bord principal
+- **Theme** : Gestion des thèmes et interface
+- **Install** : Processus d'installation
+
+### Consignes de découpage
+1. **Indépendance** : Chaque module doit pouvoir fonctionner de manière autonome
+2. **Responsabilité unique** : Un module = une responsabilité métier
+3. **Interfaces claires** : API publique bien définie entre modules
+4. **Configuration centralisée** : Paramètres en base de données
+5. **Logging intégré** : Traçabilité complète des actions
+6. **Sécurité renforcée** : Protection à tous les niveaux
+
+### Priorisation des modules à créer
+1. **SecurityManager** ✅ - Critique pour la sécurité globale
+2. **AdminManager** - Gestion avancée des comptes administrateurs
+3. **LogManager** - Centralisation et analyse des logs
+4. **CacheManager** - Optimisation des performances
+5. **ApiManager** - Exposition d'API REST sécurisées
+6. **MonitoringManager** - Surveillance système avancée
+
+---
+
+## 10. Documentation systématique
+
+### Templates obligatoires
+- **README_modele.md** : Template pour la documentation de tout nouveau module
+- **CHECKLIST_DECOUPAGE.md** : Checklist complète de modularisation
+
+### Règles de documentation
+1. **README.md obligatoire** pour chaque module avec sections standardisées
+2. **CHECKLIST.md spécifique** pour le suivi du développement et maintenance
+3. **Commentaires de code** complets et à jour
+4. **Documentation API** pour les méthodes publiques
+5. **Exemples d'utilisation** fonctionnels
+6. **Guide d'installation et configuration**
+
+---
+
+## 11. Historique des évolutions
 Renseigner ici les dates et types de modifications majeures apportées au projet.

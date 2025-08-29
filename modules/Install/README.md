@@ -4,7 +4,23 @@
 
 Le module Install fournit un système complet de gestion et de surveillance de l'installation du système N3XT WEB. Il vérifie en continu les prérequis, surveille l'état de l'installation et fournit des outils de diagnostic pour assurer le bon fonctionnement du système.
 
+
 ## Fonctionnalités
+=======
+## Dépendances
+
+Ce module nécessite les fichiers suivants pour fonctionner correctement :
+
+### BaseWidget.php
+- **Emplacement** : `modules/BaseWidget.php`
+- **Rôle** : Classe de base pour tous les widgets N3XT WEB
+- **Nécessité** : Obligatoire pour le bon fonctionnement du widget InstallStatusWidget
+- **Description** : Fournit les fonctionnalités communes pour l'affichage et la gestion des widgets
+
+**Important** : Le fichier `modules/BaseWidget.php` doit être présent à la racine du dossier modules pour que le widget InstallStatusWidget puisse être chargé correctement.
+
+## Widgets disponibles
+
 
 ### 🔍 Vérification complète de l'installation
 - Contrôle automatique de l'intégrité de l'installation
