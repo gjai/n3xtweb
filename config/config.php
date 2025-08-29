@@ -36,6 +36,11 @@ define('ADMIN_PATH', ROOT_PATH . '/admin');
 define('MAINTENANCE_MODE', false);
 define('SYSTEM_VERSION', '2.0.0');
 
+// GitHub Integration
+define('GITHUB_OWNER', 'gjai');
+define('GITHUB_REPO', 'n3xtweb');
+define('GITHUB_API_URL', 'https://api.github.com');
+
 // Security Settings
 define('CSRF_TOKEN_LIFETIME', 3600); // 1 hour
 define('SESSION_LIFETIME', 86400); // 24 hours
