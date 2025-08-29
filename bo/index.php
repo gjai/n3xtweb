@@ -454,7 +454,7 @@ if (file_exists($accessLogFile)) {
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a href="?page=maintenance" class="nav-link <?php echo $currentPage === 'maintenance' ? 'active' : ''; ?>">
+                        <a href="maintenance.php" class="nav-link">
                             🔧 Maintenance
                         </a>
                     </li>
@@ -534,7 +534,7 @@ if (file_exists($accessLogFile)) {
                             <div class="btn-group">
                                 <a href="update.php" class="btn btn-primary">Mise à jour</a>
                                 <a href="restore.php" class="btn btn-success">Sauvegarde</a>
-                                <a href="?page=maintenance" class="btn btn-warning">Mode maintenance</a>
+                                <a href="maintenance.php" class="btn btn-warning">Maintenance</a>
                                 <a href="?page=logs" class="btn btn-secondary">Voir les logs</a>
                                 <a href="../security_scanner.php?action=quick_check" class="btn btn-info" onclick="return checkSecurity()" target="_blank">Scanner sécurité</a>
                                 <a href="../system_monitor.php" class="btn btn-info" target="_blank">Monitoring</a>

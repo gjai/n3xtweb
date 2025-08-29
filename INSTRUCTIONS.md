@@ -250,8 +250,11 @@ Pour garantir la pérennité et la facilité de maintenance du portail, le déve
 
 - Le système doit pouvoir être mis à jour :
     - Par envoi manuel des fichiers via FTP
-    - Ou via le système de mise à jour interne basé sur le dépôt GitHub
+    - Via le système de mise à jour interne basé sur le dépôt GitHub
+    - **Par upload de fichiers ZIP directement dans le Back office** (nouveauté)
 - La procédure de mise à jour doit être documentée et accessible dans le Back office (section maintenance).
+- **Interface de mise à jour modernisée** avec support dual (GitHub + ZIP upload)
+- **Validation des fichiers ZIP** pour s'assurer qu'ils contiennent une mise à jour valide N3XT WEB
 
 ### 13.2 Gestion des fichiers personnalisés et de configuration
 
@@ -269,6 +272,8 @@ Pour garantir la pérennité et la facilité de maintenance du portail, le déve
     - Nettoyer les fichiers temporaires, logs anciens, caches obsolètes, etc.
     - S'assurer qu'aucun fichier sensible ou inutile ne reste accessible.
     - Prévoir un script de maintenance accessible depuis le Back office.
+    - **Interface de maintenance dédiée** avec actions rapides (cache, logs, optimisation BDD)
+    - **Surveillance système intégrée** avec métriques de performance et santé
 
 ### 13.4 Vérifications et tests
 
