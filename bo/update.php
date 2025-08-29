@@ -477,6 +477,62 @@ try {
         $action = $_POST['action'];
         
         switch ($action) {
+            case 'upload_zip':
+                if (!isset($_FILES['update_zip']) || $_FILES['update_zip']['error'] !== UPLOAD_ERR_OK) {
+                    throw new Exception('Erreur lors de l\'upload du fichier ZIP. Veuillez réessayer.');
+                }
+                
+                $uploadedFile = $_FILES['update_zip'];
+                $maxSize = 50 * 1024 * 1024; // 50MB max
+                
+                // Validate file size
+                if ($uploadedFile['size'] > $maxSize) {
+                    throw new Exception('Le fichier ZIP est trop volumineux. Taille maximale autorisée: 50MB.');
+                }
+                
+                // Validate file extension
+                $fileInfo = pathinfo($uploadedFile['name']);
+                if (strtolower($fileInfo['extension']) !== 'zip') {
+                    throw new Exception('Seuls les fichiers ZIP sont autorisés.');
+                }
+                
+                // Move uploaded file to secure location
+                $targetPath = BACKUP_PATH . '/uploaded_update_' . date('Y-m-d_H-i-s') . '.zip';
+                if (!move_uploaded_file($uploadedFile['tmp_name'], $targetPath)) {
+                    throw new Exception('Impossible de sauvegarder le fichier uploadé.');
+                }
+                
+                // Validate ZIP content
+                $zip = new ZipArchive();
+                if ($zip->open($targetPath) !== TRUE) {
+                    unlink($targetPath);
+                    throw new Exception('Le fichier ZIP est corrompu ou invalide.');
+                }
+                
+                // Check for required files to validate it's a valid N3XT WEB update
+                $requiredFiles = ['index.php', 'includes/functions.php'];
+                $hasRequiredFiles = true;
+                foreach ($requiredFiles as $file) {
+                    if ($zip->locateName($file) === false) {
+                        $hasRequiredFiles = false;
+                        break;
+                    }
+                }
+                $zip->close();
+                
+                if (!$hasRequiredFiles) {
+                    unlink($targetPath);
+                    throw new Exception('Le fichier ZIP ne semble pas être une mise à jour valide de N3XT WEB. Fichiers requis manquants.');
+                }
+                
+                $_SESSION['update_file'] = $targetPath;
+                $_SESSION['update_source'] = 'zip_upload';
+                $message = "Fichier ZIP uploadé avec succès: " . basename($targetPath) . " (" . FileHelper::formatFileSize($uploadedFile['size']) . ")";
+                $messageType = 'success';
+                
+                Logger::logUpdate("ZIP file uploaded: " . basename($targetPath) . " (" . FileHelper::formatFileSize($uploadedFile['size']) . ")");
+                break;
+            
             case 'check_update':
                 $updater = new GitHubUpdater();
                 
@@ -496,6 +552,7 @@ try {
                     $message = "Update available! Current version: {$currentVersion}, Latest version: {$latestVersion}{$cacheNote}";
                     $messageType = 'info';
                     $_SESSION['update_info'] = $release;
+                    $_SESSION['update_source'] = 'github';
                 } else {
                     $cacheNote = $usingCache ? " (informations mises en cache)" : "";
                     $message = "System is up to date. Current version: {$currentVersion}{$cacheNote}";
@@ -561,6 +618,7 @@ try {
                 $size = $updater->downloadRelease($downloadUrl, $updateFile);
                 
                 $_SESSION['update_file'] = $updateFile;
+                $_SESSION['update_source'] = 'github';
                 $message = "Update downloaded successfully: " . basename($updateFile) . " (" . FileHelper::formatFileSize($size) . ")";
                 $messageType = 'success';
                 
@@ -599,13 +657,25 @@ try {
                 $zip->extractTo($tempDir);
                 $zip->close();
                 
-                // Find extracted directory (GitHub creates a subdirectory)
-                $extractedDirs = glob($tempDir . '/*', GLOB_ONLYDIR);
-                if (empty($extractedDirs)) {
-                    throw new Exception('No extracted directory found');
+                // Find source directory (GitHub creates a subdirectory, ZIP uploads may not)
+                $sourceDir = $tempDir;
+                if (isset($_SESSION['update_source']) && $_SESSION['update_source'] === 'github') {
+                    // GitHub downloads create a subdirectory
+                    $extractedDirs = glob($tempDir . '/*', GLOB_ONLYDIR);
+                    if (!empty($extractedDirs)) {
+                        $sourceDir = $extractedDirs[0];
+                    }
+                } else {
+                    // ZIP uploads: check if files are in root or subdirectory
+                    $rootFiles = glob($tempDir . '/*.php');
+                    if (empty($rootFiles)) {
+                        // Files might be in a subdirectory
+                        $extractedDirs = glob($tempDir . '/*', GLOB_ONLYDIR);
+                        if (!empty($extractedDirs)) {
+                            $sourceDir = $extractedDirs[0];
+                        }
+                    }
                 }
-                
-                $sourceDir = $extractedDirs[0];
                 
                 // Copy files (excluding critical directories)
                 global $CRITICAL_DIRECTORIES, $UPDATE_EXCLUDE_FILES;
@@ -795,10 +865,42 @@ function deleteDirectory($dir) {
                             </div>
                         </div>
                         
-                        <!-- Step 3: Scan Files -->
+                        <!-- Step 3A: ZIP Upload Alternative -->
                         <div class="card" style="margin-bottom: 20px;">
                             <div class="card-header">
-                                <h3 class="card-title">Step 3: Scan for Unexpected Files</h3>
+                                <h3 class="card-title">Step 3A: Alternative - Upload ZIP Update</h3>
+                            </div>
+                            <div class="card-body">
+                                <div class="alert alert-info">
+                                    <strong>Alternative method:</strong> Instead of using GitHub, you can upload a ZIP file containing the update.
+                                </div>
+                                <p>Upload a ZIP file containing the N3XT WEB update files.</p>
+                                <form method="POST" enctype="multipart/form-data">
+                                    <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrfToken); ?>">
+                                    <input type="hidden" name="action" value="upload_zip">
+                                    <div style="margin-bottom: 15px;">
+                                        <label for="update_zip" style="display: block; margin-bottom: 5px; font-weight: bold;">
+                                            Select ZIP file (max 50MB):
+                                        </label>
+                                        <input type="file" id="update_zip" name="update_zip" accept=".zip" required 
+                                               style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+                                    </div>
+                                    <button type="submit" class="btn btn-primary">Upload ZIP Update</button>
+                                </form>
+                                
+                                <?php if (isset($_SESSION['update_file']) && isset($_SESSION['update_source']) && $_SESSION['update_source'] === 'zip_upload'): ?>
+                                    <div style="margin-top: 15px; padding: 15px; background: #e8f5e8; border-radius: 4px;">
+                                        <p><strong>✓ ZIP file uploaded successfully:</strong> <?php echo basename($_SESSION['update_file']); ?></p>
+                                        <p style="color: #666; font-size: 14px;">You can now proceed to apply the update (skip GitHub download step).</p>
+                                    </div>
+                                <?php endif; ?>
+                            </div>
+                        </div>
+                        
+                        <!-- Step 3B: Scan Files -->
+                        <div class="card" style="margin-bottom: 20px;">
+                            <div class="card-header">
+                                <h3 class="card-title">Step 3B: Scan for Unexpected Files</h3>
                             </div>
                             <div class="card-body">
                                 <p>Scan the system for unexpected files that might interfere with the update.</p>
@@ -832,23 +934,29 @@ function deleteDirectory($dir) {
                             </div>
                         </div>
                         
-                        <!-- Step 4: Download Update -->
+                        <!-- Step 4: Download Update from GitHub -->
                         <div class="card" style="margin-bottom: 20px;">
                             <div class="card-header">
-                                <h3 class="card-title">Step 4: Download Update</h3>
+                                <h3 class="card-title">Step 4: Download Update from GitHub</h3>
                             </div>
                             <div class="card-body">
-                                <p>Download the latest release from GitHub.</p>
-                                <form method="POST" style="display: inline;">
-                                    <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrfToken); ?>">
-                                    <input type="hidden" name="action" value="download_update">
-                                    <button type="submit" class="btn btn-primary" 
-                                            <?php echo !isset($_SESSION['update_info']) ? 'disabled' : ''; ?>>
-                                        Download Update
-                                    </button>
-                                </form>
+                                <?php if (isset($_SESSION['update_source']) && $_SESSION['update_source'] === 'zip_upload'): ?>
+                                    <div class="alert alert-info">
+                                        <strong>ZIP upload method active:</strong> You can skip this step since you've uploaded a ZIP file.
+                                    </div>
+                                <?php else: ?>
+                                    <p>Download the latest release from GitHub.</p>
+                                    <form method="POST" style="display: inline;">
+                                        <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrfToken); ?>">
+                                        <input type="hidden" name="action" value="download_update">
+                                        <button type="submit" class="btn btn-primary" 
+                                                <?php echo !isset($_SESSION['update_info']) ? 'disabled' : ''; ?>>
+                                            Download Update
+                                        </button>
+                                    </form>
+                                <?php endif; ?>
                                 
-                                <?php if (isset($_SESSION['update_file'])): ?>
+                                <?php if (isset($_SESSION['update_file']) && (!isset($_SESSION['update_source']) || $_SESSION['update_source'] === 'github')): ?>
                                     <div style="margin-top: 15px; padding: 15px; background: #e8f5e8; border-radius: 4px;">
                                         <p><strong>✓ Update downloaded:</strong> <?php echo basename($_SESSION['update_file']); ?></p>
                                     </div>
