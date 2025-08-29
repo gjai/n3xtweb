@@ -293,19 +293,76 @@ function createDatabaseTables($dbConfig) {
     ";
     $pdo->exec($sql);
     
-    // Insert default settings
+    // Insert default settings - comprehensive configuration system
     $settings = [
+        // System Configuration
         ['maintenance_mode', '1'], // Enable maintenance mode by default
         ['system_version', SYSTEM_VERSION],
         ['install_date', date('Y-m-d H:i:s')],
         ['table_prefix', $prefix],
-        // Security settings (disabled by default)
+        ['root_path', dirname(__DIR__)],
+        ['log_path', dirname(__DIR__) . '/logs'],
+        ['backup_path', dirname(__DIR__) . '/backups'],
+        ['upload_path', dirname(__DIR__) . '/uploads'],
+        ['admin_path', dirname(__DIR__) . '/admin'],
+        
+        // Security Settings
+        ['csrf_token_lifetime', '3600'],
+        ['session_lifetime', '86400'],
+        ['admin_session_timeout', '14400'],
+        ['max_login_attempts', '5'],
+        ['login_lockout_time', '900'],
+        ['password_min_length', '8'],
         ['enable_captcha', '0'],
-        ['enable_login_attempts_limit', '0'], 
-        ['enable_ip_blocking', '0'],
-        ['enable_ip_tracking', '0'],
-        ['max_login_attempts', '3'],
-        ['login_lockout_time', '900']
+        ['enable_login_attempts_limit', '1'], 
+        ['enable_ip_blocking', '1'],
+        ['enable_ip_tracking', '1'],
+        ['enable_database_logging', '1'],
+        ['enable_security_headers', '1'],
+        
+        // Performance Settings
+        ['enable_caching', '1'],
+        ['cache_ttl_default', '3600'],
+        ['cache_ttl_queries', '300'],
+        ['enable_gzip', '1'],
+        ['enable_asset_optimization', '1'],
+        
+        // Debug Settings (disabled by default in production)
+        ['debug', '0'],
+        ['enable_error_display', '0'],
+        ['log_queries', '0'],
+        
+        // GitHub Integration
+        ['github_owner', 'gjai'],
+        ['github_repo', 'n3xtweb'],
+        ['github_api_url', 'https://api.github.com'],
+        
+        // Email Configuration
+        ['smtp_host', ''],
+        ['smtp_port', '587'],
+        ['smtp_user', ''],
+        ['smtp_pass', ''],
+        ['smtp_from', ''],
+        ['smtp_from_name', 'N3XT WEB'],
+        
+        // Theme/CSS Configuration
+        ['theme_primary_color', '#667eea'],
+        ['theme_secondary_color', '#764ba2'],
+        ['theme_success_color', '#27ae60'],
+        ['theme_danger_color', '#e74c3c'],
+        ['theme_warning_color', '#f39c12'],
+        ['theme_info_color', '#3498db'],
+        ['theme_font_family', '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, sans-serif'],
+        ['theme_font_size', '14px'],
+        ['theme_border_radius', '8px'],
+        
+        // Site Configuration
+        ['site_name', 'N3XT WEB'],
+        ['site_description', 'Professional web management system'],
+        ['site_logo', ''],
+        ['site_favicon', '/fav.png'],
+        ['site_language', 'fr'],
+        ['site_timezone', 'Europe/Paris']
     ];
     
     $stmt = $pdo->prepare("INSERT IGNORE INTO {$prefix}system_settings (setting_key, setting_value) VALUES (?, ?)");

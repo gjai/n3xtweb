@@ -22,6 +22,7 @@ if (!defined('DEFAULT_LOG_LEVEL')) define('DEFAULT_LOG_LEVEL', LOG_LEVEL_WARNING
 
 // Load configuration
 require_once dirname(__DIR__) . '/config/config.php';
+require_once dirname(__DIR__) . '/includes/Configuration.php';
 
 /**
  * Database connection using PDO with prepared statements
