@@ -6,6 +6,18 @@ Ce module gère le statut de l'installation et les informations système du back
 
 Le module Install fournit des outils pour surveiller l'état de l'installation, vérifier les prérequis système et afficher les informations de configuration importantes.
 
+## Dépendances
+
+Ce module nécessite les fichiers suivants pour fonctionner correctement :
+
+### BaseWidget.php
+- **Emplacement** : `modules/BaseWidget.php`
+- **Rôle** : Classe de base pour tous les widgets N3XT WEB
+- **Nécessité** : Obligatoire pour le bon fonctionnement du widget InstallStatusWidget
+- **Description** : Fournit les fonctionnalités communes pour l'affichage et la gestion des widgets
+
+**Important** : Le fichier `modules/BaseWidget.php` doit être présent à la racine du dossier modules pour que le widget InstallStatusWidget puisse être chargé correctement.
+
 ## Widgets disponibles
 
 ### InstallStatusWidget
