@@ -5,6 +5,40 @@ All notable changes to N3XT WEB will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.4.0] - 2024-12-19
+
+### Added
+- **👤 Administrator Configuration Module**: Comprehensive admin profile management
+  - Personal information management (name, first name, email, language preferences)
+  - Secure password change functionality with validation
+  - Auto-generated avatar display based on username
+  - Session information and security overview
+- **🗂️ Enhanced Log Management**: Configurable log rotation and archiving system
+  - ZIP archiving of logs after 24 hours (configurable)
+  - Automatic deletion of archived logs after 7 days (configurable)
+  - New configuration settings: `log_archive_hours`, `log_delete_days`, `log_max_size_mb`
+  - Time-based archiving replacing previous size-based rotation
+
+### Removed
+- **🧹 UI Cleanup**: Streamlined back office interface
+  - Removed "Test connection" button from dashboard (redundant functionality)
+  - Removed "Quick Actions" menu section (functionality moved to main navigation)
+  - Removed "Users" menu and page (replaced by Administrator Configuration)
+
+### Changed  
+- **🎨 Visual Identity Integration**: Consistent branding across all interfaces
+  - fav.png favicon now prioritized over assets/images/logo.png
+  - Added favicon integration to installer
+  - Updated installer logo hierarchy to use fav.png first
+- **⚙️ Configuration System**: Extended configuration management
+  - Added admin profile configuration options
+  - Enhanced log retention configuration options
+
+### Fixed
+- **🔧 Installation Process**: Improved visual consistency
+  - Installer now properly displays fav.png favicon
+  - Logo fallback hierarchy ensures consistent branding
+
 ## [2.3.2] - 2024-12-19
 
 ### Security
