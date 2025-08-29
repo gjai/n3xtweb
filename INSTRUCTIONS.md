@@ -227,4 +227,39 @@ function login($username, $password) {
 
 ---
 
+## 13. Mise à jour et maintenance
+
+Pour garantir la pérennité et la facilité de maintenance du portail, le développement doit respecter les principes suivants :
+
+### 13.1 Modes de mise à jour
+
+- Le système doit pouvoir être mis à jour :
+    - Par envoi manuel des fichiers via FTP
+    - Ou via le système de mise à jour interne basé sur le dépôt GitHub
+- La procédure de mise à jour doit être documentée et accessible dans le Back office (section maintenance).
+
+### 13.2 Gestion des fichiers personnalisés et de configuration
+
+- Les fichiers de configuration ou personnalisés (`config/`, `custom/`, fichiers d'uploads, etc.) doivent être créés lors de l'installation.
+- **Ces fichiers ne doivent jamais être écrasés lors d'une mise à jour** : ils doivent être exclus explicitement des scripts ou procédures de mise à jour.
+- Centraliser et versionner la liste des fichiers exclus dans un fichier dédié (`update.excludes` ou `config/update_excludes.json`).
+- La structure du projet doit permettre une séparation claire entre le cœur du portail et les fichiers personnalisables/utilisateur.
+
+### 13.3 Nettoyage et maintenance post-mise à jour
+
+- Après chaque Pull Request :
+    - Le dépôt doit être nettoyé si besoin (suppression des fichiers temporaires, inutiles, obsolètes).
+    - Utiliser un script ou une checklist pour automatiser ce nettoyage.
+- Après chaque installation ou mise à jour sur le serveur :
+    - Nettoyer les fichiers temporaires, logs anciens, caches obsolètes, etc.
+    - S'assurer qu'aucun fichier sensible ou inutile ne reste accessible.
+    - Prévoir un script de maintenance accessible depuis le Back office.
+
+### 13.4 Vérifications et tests
+
+- Après chaque mise à jour, effectuer des tests automatiques (ou manuels) pour vérifier le bon fonctionnement des principales fonctionnalités du portail (accès Back office, sécurité, langues, uploads, etc.).
+- Documenter tous les problèmes ou anomalies détectés et les corriger lors des cycles suivants.
+
+---
+
 **Corrige, complète ou adapte ce fichier selon tes besoins !**
