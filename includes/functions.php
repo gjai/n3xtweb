@@ -133,6 +133,11 @@ class Database {
      * Execute a prepared statement with parameters and enhanced security
      */
     public function execute($sql, $params = []) {
+        // Check if database is configured before attempting operations
+        if ($this->pdo === null) {
+            throw new Exception('Database is not configured yet.');
+        }
+        
         try {
             // Log potentially dangerous queries in development
             if (defined('DEBUG') && DEBUG) {
@@ -2291,15 +2296,19 @@ if (defined('ENABLE_SECURITY_HEADERS') && ENABLE_SECURITY_HEADERS) {
     Security::setSecurityHeaders();
 }
 
-// Load modules if available
+// Load modules if available and database is configured
 if (file_exists(dirname(__DIR__) . '/modules/loader.php')) {
     require_once dirname(__DIR__) . '/modules/loader.php';
     
-    // Apply module migration if needed
-    try {
-        ModulesLoader::migrate();
-    } catch (Exception $e) {
-        error_log("Modules migration failed: " . $e->getMessage());
+    // Apply module migration only if config exists and DB constants are defined
+    if (file_exists(dirname(__DIR__) . '/config/config.php') && 
+        defined('DB_HOST') && defined('DB_NAME') && defined('DB_USER') && defined('DB_PASS') &&
+        !empty(DB_HOST) && !empty(DB_NAME) && !empty(DB_USER)) {
+        try {
+            ModulesLoader::migrate();
+        } catch (Exception $e) {
+            error_log("Modules migration failed: " . $e->getMessage());
+        }
     }
 }
 
