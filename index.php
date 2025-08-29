@@ -17,6 +17,9 @@ if (!file_exists('config/config.php')) {
 // Load config and check if properly configured
 require_once 'config/config.php';
 
+// Load functions to initialize configuration constants
+require_once 'includes/functions.php';
+
 // Additional check: if database config is still default, redirect to install
 if (!defined('DB_HOST') || (DB_HOST === 'nxtxyzylie618.mysql.db' && DB_NAME === 'nxtxyzylie618_db' && DB_USER === 'nxtxyzylie618_user')) {
     header('Location: install.php');
