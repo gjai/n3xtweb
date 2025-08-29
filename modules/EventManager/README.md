@@ -1,15 +1,55 @@
-# EventManager Module
+# Module EventManager - N3XT WEB
 
-## Overview
-The EventManager module provides comprehensive event logging, monitoring, and notification capabilities for the N3XT WEB system.
+## Vue d'ensemble
+Le module EventManager fournit un système complet de gestion des événements, permettant de tracer toutes les activités du système, surveiller les actions utilisateur et maintenir un audit détaillé pour la sécurité et le dépannage.
 
-## Features
-- **Event Logging**: Record system events with categorization and severity levels
-- **Event Monitoring**: Real-time monitoring of system activities
-- **Event Analytics**: Statistical analysis of event patterns
-- **Automatic Cleanup**: Configurable retention and archival of old events
-- **Critical Notifications**: Immediate alerts for critical system events
-- **Webhook Integration**: Send events to external systems
+## Widgets disponibles
+
+### RecentEventsWidget
+
+Widget principal qui affiche les événements récents et les activités du système en temps réel.
+
+#### Fonctionnalités
+- **Événements récents** : Affichage chronologique des dernières activités
+- **Filtrage par catégorie** : Système, sécurité, utilisateur, maintenance
+- **Timeline interactive** : Groupement par date avec navigation intuitive
+- **Analyses statistiques** : Résumés et tendances des événements
+
+#### Configuration
+
+```php
+$config = [
+    'enabled' => true,
+    'title' => 'Événements récents',
+    'description' => 'Affiche les événements récents et les activités du système',
+    'refresh_interval' => 30, // 30 secondes
+    'max_events' => 15,
+    'show_categories' => ['system', 'security', 'user', 'maintenance'],
+    'show_chart' => true,
+    'group_by_date' => true
+];
+```
+
+#### Utilisation
+
+```php
+// Instanciation du widget
+$widget = new RecentEventsWidget();
+
+// Récupération des données
+$data = $widget->getData();
+
+// Rendu HTML
+echo $widget->render();
+```
+
+## Fonctionnalités principales
+- **Event Logging**: Enregistrement des événements avec catégorisation et niveaux de sévérité
+- **Event Monitoring**: Surveillance en temps réel des activités système
+- **Event Analytics**: Analyse statistique des patterns d'événements
+- **Automatic Cleanup**: Rétention et archivage configurables des anciens événements
+- **Critical Notifications**: Alertes immédiates pour les événements critiques
+- **Webhook Integration**: Envoi d'événements vers des systèmes externes
 
 ## Configuration
 Module configuration is stored in the `{prefix}event_config` table:

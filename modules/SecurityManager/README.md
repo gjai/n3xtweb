@@ -1,17 +1,57 @@
-# SecurityManager Module
+# Module SecurityManager - N3XT WEB
 
-## Overview
-The SecurityManager module provides comprehensive security policies, threat detection, and protection mechanisms for the N3XT WEB system.
+## Vue d'ensemble
+Le module SecurityManager fournit des politiques de sécurité complètes, la détection de menaces et des mécanismes de protection pour le système N3XT WEB.
 
-## Features
-- **Login Protection**: Brute force protection and IP blocking
-- **Password Security**: Password strength validation and complexity requirements
-- **Session Management**: Secure session handling with timeout controls
-- **IP Management**: Whitelist/blacklist functionality
-- **Security Scanning**: Automated security assessment
-- **Threat Detection**: Real-time threat level monitoring
-- **Audit Logging**: Comprehensive security event logging
-- **Two-Factor Authentication**: Enhanced authentication security (configurable)
+## Widgets disponibles
+
+### SecurityAlertsWidget
+
+Widget principal qui affiche les alertes de sécurité et le statut de protection du système.
+
+#### Fonctionnalités
+- **Alertes de sécurité** : Affichage des menaces et incidents en temps réel
+- **Statut de protection** : Vue d'ensemble de l'état de sécurité global
+- **Indicateurs de menace** : Métriques et analyses des risques
+- **Actions de sécurité** : Interface pour traiter les alertes
+
+#### Configuration
+
+```php
+$config = [
+    'enabled' => true,
+    'title' => 'Alertes de sécurité',
+    'description' => 'Affiche les alertes de sécurité et le statut de protection du système',
+    'refresh_interval' => 60,
+    'max_alerts' => 10,
+    'show_resolved' => false,
+    'alert_levels' => ['critical', 'high', 'medium', 'low'],
+    'auto_scan_enabled' => true
+];
+```
+
+#### Utilisation
+
+```php
+// Instanciation du widget
+$widget = new SecurityAlertsWidget();
+
+// Récupération des données
+$data = $widget->getData();
+
+// Rendu HTML
+echo $widget->render();
+```
+
+## Fonctionnalités principales
+- **Protection de connexion** : Protection contre la force brute et blocage d'IP
+- **Sécurité des mots de passe** : Validation de la force et exigences de complexité
+- **Gestion de session** : Gestion sécurisée des sessions avec contrôles de timeout
+- **Gestion IP** : Fonctionnalité de liste blanche/noire
+- **Scan de sécurité** : Évaluation automatisée de la sécurité
+- **Détection de menaces** : Surveillance du niveau de menace en temps réel
+- **Audit des logs** : Journalisation complète des événements de sécurité
+- **Authentification à deux facteurs** : Sécurité d'authentification renforcée (configurable)
 
 ## Configuration
 Module configuration is stored in the `{prefix}security_config` table:
