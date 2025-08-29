@@ -20,8 +20,11 @@ if (!defined('LOG_LEVEL_INFO')) define('LOG_LEVEL_INFO', 3);
 if (!defined('LOG_LEVEL_DEBUG')) define('LOG_LEVEL_DEBUG', 4);
 if (!defined('DEFAULT_LOG_LEVEL')) define('DEFAULT_LOG_LEVEL', LOG_LEVEL_WARNING);
 
-// Load configuration
-require_once dirname(__DIR__) . '/config/config.php';
+// Load configuration (conditional during installation)
+$configPath = dirname(__DIR__) . '/config/config.php';
+if (file_exists($configPath)) {
+    require_once $configPath;
+}
 require_once dirname(__DIR__) . '/includes/Configuration.php';
 
 /**
@@ -32,6 +35,11 @@ class Database {
     private $pdo;
     
     private function __construct() {
+        // Don't attempt connection if configuration constants are not defined
+        if (!defined('DB_HOST') || !defined('DB_NAME') || !defined('DB_USER') || !defined('DB_PASS')) {
+            return; // Skip connection during installation
+        }
+        
         try {
             $dsn = "mysql:host=" . DB_HOST . ";dbname=" . DB_NAME . ";charset=" . DB_CHARSET;
             $options = [
@@ -186,8 +194,10 @@ class Database {
     }
 }
 
-// Load configuration now that Database class is available
-Configuration::loadConfig();
+// Load configuration now that Database class is available (only if config exists)
+if (file_exists(dirname(__DIR__) . '/config/config.php')) {
+    Configuration::loadConfig();
+}
 
 // Initialize configuration constants for backward compatibility
 function initializeConfigConstants() {
@@ -237,8 +247,10 @@ function initializeConfigConstants() {
     if (!defined('SMTP_FROM_NAME')) define('SMTP_FROM_NAME', Configuration::get('smtp_from_name', 'N3XT WEB'));
 }
 
-// Initialize configuration constants
-initializeConfigConstants();
+// Initialize configuration constants (only if config exists)
+if (file_exists(dirname(__DIR__) . '/config/config.php')) {
+    initializeConfigConstants();
+}
 
 /**
  * Security helper functions
@@ -2144,6 +2156,8 @@ if (defined('ENABLE_SECURITY_HEADERS') && ENABLE_SECURITY_HEADERS) {
     Security::setSecurityHeaders();
 }
 
-// Start session
-Session::start();
+// Start session (only if config exists)
+if (file_exists(dirname(__DIR__) . '/config/config.php')) {
+    Session::start();
+}
 ?>
