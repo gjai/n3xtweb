@@ -134,25 +134,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                 }
                 break;
                 
-            case 'test_database':
-                try {
-                    $db = Database::getInstance();
-                    $result = $db->fetchOne("SELECT 1 as test, NOW() as current_time");
-                    if ($result) {
-                        $settingsMessage = 'Database connection successful! Server time: ' . $result['current_time'];
-                        $settingsMessageType = 'success';
-                        Logger::logAccess($_SESSION['admin_username'], true, 'Database connection test successful');
-                    } else {
-                        $settingsMessage = 'Database connection test failed - no result returned.';
-                        $settingsMessageType = 'danger';
-                    }
-                } catch (Exception $e) {
-                    $settingsMessage = 'Database connection test failed: ' . $e->getMessage();
-                    $settingsMessageType = 'danger';
-                    Logger::logAccess($_SESSION['admin_username'], false, 'Database connection test failed: ' . $e->getMessage());
-                }
-                break;
-                
             case 'update_system_settings':
                 $updatedSettings = [];
                 $settingsToUpdate = [
@@ -419,11 +400,6 @@ if (file_exists($accessLogFile)) {
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a href="?page=users" class="nav-link <?php echo $currentPage === 'users' ? 'active' : ''; ?>">
-                            👤 Utilisateurs
-                        </a>
-                    </li>
-                    <li class="nav-item">
                         <a href="?page=logs" class="nav-link <?php echo $currentPage === 'logs' ? 'active' : ''; ?>">
                             📋 Logs
                         </a>
@@ -514,30 +490,10 @@ if (file_exists($accessLogFile)) {
                                     <tr>
                                         <td><strong>Base de données</strong></td>
                                         <td>
-                                            <form method="post" style="display: inline;">
-                                                <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrfToken); ?>">
-                                                <input type="hidden" name="action" value="test_database">
-                                                <button type="submit" class="btn btn-sm btn-outline-primary">Tester la connexion</button>
-                                            </form>
+                                            <span class="badge badge-success">Connectée</span>
                                         </td>
                                     </tr>
                                 </table>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="card">
-                        <div class="card-header">
-                            <h2 class="card-title">Actions rapides</h2>
-                        </div>
-                        <div class="card-body">
-                            <div class="btn-group">
-                                <a href="update.php" class="btn btn-primary">Mise à jour</a>
-                                <a href="restore.php" class="btn btn-success">Sauvegarde</a>
-                                <a href="maintenance.php" class="btn btn-warning">Maintenance</a>
-                                <a href="?page=logs" class="btn btn-secondary">Voir les logs</a>
-                                <a href="../security_scanner.php?action=quick_check" class="btn btn-info" onclick="return checkSecurity()" target="_blank">Scanner sécurité</a>
-                                <a href="../system_monitor.php" class="btn btn-info" target="_blank">Monitoring</a>
                             </div>
                         </div>
                     </div>
@@ -830,51 +786,6 @@ if (file_exists($accessLogFile)) {
                                     <li>Système de paiement</li>
                                     <li>Gestion des stocks</li>
                                 </ul>
-                            </div>
-                        </div>
-                    </div>
-                    
-                <?php elseif ($currentPage === 'users'): ?>
-                    <div class="card">
-                        <div class="card-header">
-                            <h2 class="card-title">Gestion des utilisateurs</h2>
-                        </div>
-                        <div class="card-body">
-                            <div class="alert alert-info">
-                                <strong>Administration des utilisateurs</strong><br>
-                                Gérez les comptes administrateurs et utilisateurs du système.
-                            </div>
-                            
-                            <div class="row">
-                                <div class="col-md-6">
-                                    <h4>Administrateurs</h4>
-                                    <p>Comptes avec accès total au système.</p>
-                                    <table class="table table-striped">
-                                        <thead>
-                                            <tr>
-                                                <th>Nom d'utilisateur</th>
-                                                <th>Dernière connexion</th>
-                                                <th>Actions</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            <tr>
-                                                <td><?php echo htmlspecialchars($_SESSION['admin_username']); ?></td>
-                                                <td>Maintenant</td>
-                                                <td>
-                                                    <a href="#" class="btn btn-sm btn-primary">Modifier</a>
-                                                </td>
-                                            </tr>
-                                        </tbody>
-                                    </table>
-                                    <a href="#" class="btn btn-success">Ajouter un administrateur</a>
-                                </div>
-                                <div class="col-md-6">
-                                    <h4>Utilisateurs clients</h4>
-                                    <p>Comptes clients avec accès à l'espace client.</p>
-                                    <p class="text-muted">Aucun utilisateur client configuré.</p>
-                                    <a href="#" class="btn btn-primary">Ajouter un utilisateur</a>
-                                </div>
                             </div>
                         </div>
                     </div>
