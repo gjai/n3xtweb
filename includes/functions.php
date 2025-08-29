@@ -534,6 +534,156 @@ class Logger {
                 unlink($rotatedPath);
             }
         }
+        
+        // Clean up old rotated logs (keep only last 30 days)
+        self::cleanupOldLogs();
+    }
+    
+    /**
+     * Clean up old log files
+     */
+    public static function cleanupOldLogs($maxAge = 30) {
+        if (!is_dir(LOG_PATH)) {
+            return 0;
+        }
+        
+        $deleted = 0;
+        $cutoffTime = time() - ($maxAge * 24 * 60 * 60);
+        
+        $files = glob(LOG_PATH . '/*.log.*');
+        foreach ($files as $file) {
+            if (filemtime($file) < $cutoffTime) {
+                unlink($file);
+                $deleted++;
+            }
+        }
+        
+        return $deleted;
+    }
+    
+    /**
+     * Get log statistics
+     */
+    public static function getLogStats() {
+        $stats = [
+            'total_size' => 0,
+            'file_count' => 0,
+            'log_files' => []
+        ];
+        
+        if (!is_dir(LOG_PATH)) {
+            return $stats;
+        }
+        
+        $files = glob(LOG_PATH . '/*.log*');
+        foreach ($files as $file) {
+            $size = filesize($file);
+            $stats['total_size'] += $size;
+            $stats['file_count']++;
+            
+            $stats['log_files'][] = [
+                'name' => basename($file),
+                'size' => $size,
+                'modified' => filemtime($file),
+                'lines' => self::countFileLines($file)
+            ];
+        }
+        
+        return $stats;
+    }
+    
+    /**
+     * Count lines in a file efficiently
+     */
+    private static function countFileLines($file) {
+        $lineCount = 0;
+        $handle = fopen($file, 'r');
+        
+        if ($handle) {
+            while (($line = fgets($handle)) !== false) {
+                $lineCount++;
+            }
+            fclose($handle);
+        }
+        
+        return $lineCount;
+    }
+    
+    /**
+     * Analyze log patterns for security issues
+     */
+    public static function analyzeSecurityLogs($logFile = 'access') {
+        $logPath = LOG_PATH . "/{$logFile}.log";
+        
+        if (!file_exists($logPath)) {
+            return ['status' => 'error', 'message' => 'Log file not found'];
+        }
+        
+        $analysis = [
+            'failed_logins' => 0,
+            'suspicious_ips' => [],
+            'user_agents' => [],
+            'attack_patterns' => [],
+            'time_analysis' => []
+        ];
+        
+        $handle = fopen($logPath, 'r');
+        if (!$handle) {
+            return ['status' => 'error', 'message' => 'Cannot read log file'];
+        }
+        
+        $ipFailures = [];
+        $userAgents = [];
+        
+        while (($line = fgets($handle)) !== false) {
+            // Parse log entry
+            if (preg_match('/\[([^\]]+)\].*\[IP:([^\]]+)\].*\| UA:(.*)/', $line, $matches)) {
+                $timestamp = $matches[1];
+                $ip = $matches[2];
+                $userAgent = trim($matches[3]);
+                
+                // Check for failed login attempts
+                if (strpos($line, 'FAILED') !== false) {
+                    $analysis['failed_logins']++;
+                    $ipFailures[$ip] = ($ipFailures[$ip] ?? 0) + 1;
+                }
+                
+                // Collect user agents
+                if (!empty($userAgent) && $userAgent !== 'unknown') {
+                    $userAgents[$userAgent] = ($userAgents[$userAgent] ?? 0) + 1;
+                }
+                
+                // Check for attack patterns
+                $attackKeywords = ['sql', 'script', 'union', 'select', 'drop', 'delete', 'admin\'', 'or 1=1'];
+                foreach ($attackKeywords as $keyword) {
+                    if (stripos($line, $keyword) !== false) {
+                        $analysis['attack_patterns'][] = [
+                            'timestamp' => $timestamp,
+                            'ip' => $ip,
+                            'pattern' => $keyword,
+                            'line' => substr($line, 0, 200)
+                        ];
+                    }
+                }
+            }
+        }
+        fclose($handle);
+        
+        // Identify suspicious IPs (more than 10 failed attempts)
+        foreach ($ipFailures as $ip => $count) {
+            if ($count >= 10) {
+                $analysis['suspicious_ips'][] = [
+                    'ip' => $ip,
+                    'failed_attempts' => $count
+                ];
+            }
+        }
+        
+        // Sort user agents by frequency
+        arsort($userAgents);
+        $analysis['user_agents'] = array_slice($userAgents, 0, 10, true);
+        
+        return $analysis;
     }
     
     /**
