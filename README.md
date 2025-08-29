@@ -19,7 +19,9 @@ A powerful, secure, and responsive web content management system with advanced b
 - **Database connection diagnostics** - Clear error messages and connection testing
 
 ### 🔄 Automated Updates
-- GitHub integration for downloading latest releases
+- **GitHub integration** for downloading latest releases
+- **ZIP upload system** - Upload update packages directly through back office (max 50MB)
+- **Dual-source update workflow** - Choose between GitHub or ZIP upload methods
 - Automatic backup creation before updates
 - File integrity checking and unexpected file scanning
 - Safe core replacement excluding critical directories
@@ -45,6 +47,13 @@ A powerful, secure, and responsive web content management system with advanced b
 - System error tracking with detailed diagnostics
 - Configurable log levels
 - Real-time log viewing in admin panel with database connection testing
+
+### 🔧 System Maintenance
+- **Comprehensive maintenance interface** accessible from back office
+- **Quick actions** - Cache clearing, log cleanup, temp file cleanup, database optimization
+- **Health checks** - System performance and integrity monitoring
+- **Automated maintenance** via cron job support
+- **System information** dashboard with resource usage monitoring
 
 ## 📋 System Requirements
 
