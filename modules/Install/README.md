@@ -334,6 +334,126 @@ $installManager->setConfig('check_interval', 600); // 10 minutes
 $installManager->setConfig('alert_disk_threshold', 85);
 ```
 
+## 🔧 Utilisation de l'API InstallPreCheck
+
+### Vérification complète des prérequis
+
+```php
+// Inclure la classe
+require_once 'modules/Install/InstallPreCheck.php';
+
+// Créer une instance
+$preCheck = new InstallPreCheck();
+
+// Lancer toutes les vérifications
+$results = $preCheck->runAllChecks();
+
+// Vérifier le statut global
+if ($results['overall_status']) {
+    echo "✅ Tous les prérequis sont remplis";
+} else {
+    echo "❌ Certains prérequis ne sont pas remplis";
+    
+    // Afficher les erreurs critiques
+    $errors = $preCheck->getCriticalErrors();
+    foreach ($errors as $error) {
+        echo "- {$error['message']}\n";
+        if ($error['recommendation']) {
+            echo "  Solution: {$error['recommendation']}\n";
+        }
+    }
+}
+```
+
+### Vérification avec base de données
+
+```php
+// Configuration base de données
+$dbConfig = [
+    'host' => 'localhost',
+    'name' => 'n3xtweb_db',
+    'user' => 'n3xtweb_user',
+    'pass' => 'password123'
+];
+
+// Vérifications avec test de connexion DB
+$results = $preCheck->runAllChecksWithDatabase($dbConfig);
+
+// Vérifier spécifiquement la base de données
+if (isset($results['checks']['database'])) {
+    $dbCheck = $results['checks']['database'];
+    if ($dbCheck['status']) {
+        echo "✅ Connexion base de données réussie";
+    } else {
+        echo "❌ Problème de base de données: {$dbCheck['message']}";
+        echo "Solution: {$dbCheck['recommendation']}";
+    }
+}
+```
+
+### Vérifications spécifiques
+
+```php
+// Vérifier uniquement la version PHP
+$preCheck->checkPhpVersion();
+
+// Vérifier uniquement les extensions
+$preCheck->checkPhpExtensions();
+
+// Vérifier uniquement les permissions
+$preCheck->checkDirectoryPermissions();
+
+// Vérifier uniquement l'espace disque
+$preCheck->checkDiskSpace();
+
+// Obtenir les résultats
+$results = $preCheck->getResults();
+```
+
+### Affichage détaillé des résultats
+
+```php
+$results = $preCheck->runAllChecks();
+
+echo "=== Résumé ===\n";
+$summary = $results['summary'];
+echo "Tests réussis: {$summary['passed']}/{$summary['total']}\n";
+echo "Taux de réussite: {$summary['success_rate']}%\n";
+
+if ($summary['warnings'] > 0) {
+    echo "Avertissements: {$summary['warnings']}\n";
+}
+
+if ($summary['errors'] > 0) {
+    echo "Erreurs: {$summary['errors']}\n";
+}
+
+echo "\n=== Détails par catégorie ===\n";
+foreach ($results['checks'] as $category => $checks) {
+    echo "\n--- " . strtoupper($category) . " ---\n";
+    
+    if (is_array($checks) && isset($checks['status'])) {
+        // Vérification simple
+        $icon = $checks['status'] ? '✅' : '❌';
+        echo "$icon {$checks['name']}: {$checks['message']}\n";
+        
+        if ($checks['recommendation']) {
+            echo "   💡 {$checks['recommendation']}\n";
+        }
+    } else {
+        // Vérifications multiples (extensions, permissions)
+        foreach ($checks as $name => $check) {
+            $icon = $check['status'] ? '✅' : '❌';
+            echo "$icon {$check['name']}: {$check['message']}\n";
+            
+            if ($check['recommendation']) {
+                echo "   💡 {$check['recommendation']}\n";
+            }
+        }
+    }
+}
+```
+
 ## Administration
 
 **Interface disponible :** `/bo/install.php`

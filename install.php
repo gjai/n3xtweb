@@ -1032,6 +1032,48 @@ $comprehensiveCheck = getComprehensiveRequirements();
                         <?php endforeach; ?>
                     </ul>
                     
+                    <?php if (isset($comprehensiveCheck) && $comprehensiveCheck['summary']['warnings'] > 0): ?>
+                        <div class="alert alert-warning">
+                            <h4>⚠️ Avertissements détectés</h4>
+                            <ul>
+                                <?php 
+                                $preCheckInstance = new InstallPreCheck();
+                                $preCheckInstance->runAllChecks();
+                                $warnings = $preCheckInstance->getWarnings();
+                                foreach ($warnings as $warning): ?>
+                                    <li>
+                                        <strong><?php echo htmlspecialchars($warning['name']); ?>:</strong> 
+                                        <?php echo htmlspecialchars($warning['message']); ?>
+                                        <?php if ($warning['recommendation']): ?>
+                                            <br><em>Recommandation: <?php echo htmlspecialchars($warning['recommendation']); ?></em>
+                                        <?php endif; ?>
+                                    </li>
+                                <?php endforeach; ?>
+                            </ul>
+                        </div>
+                    <?php endif; ?>
+                    
+                    <?php if (!$allRequirementsMet && isset($comprehensiveCheck)): ?>
+                        <div class="alert alert-danger">
+                            <h4>❌ Erreurs critiques détectées</h4>
+                            <ul>
+                                <?php 
+                                $preCheckInstance = new InstallPreCheck();
+                                $preCheckInstance->runAllChecks();
+                                $errors = $preCheckInstance->getCriticalErrors();
+                                foreach ($errors as $error): ?>
+                                    <li>
+                                        <strong><?php echo htmlspecialchars($error['name']); ?>:</strong> 
+                                        <?php echo htmlspecialchars($error['message']); ?>
+                                        <?php if ($error['recommendation']): ?>
+                                            <br><em>Solution: <?php echo htmlspecialchars($error['recommendation']); ?></em>
+                                        <?php endif; ?>
+                                    </li>
+                                <?php endforeach; ?>
+                            </ul>
+                        </div>
+                    <?php endif; ?>
+                    
                     <?php if ($allRequirementsMet): ?>
                         <div class="alert alert-success">
                             <strong>✅ Great!</strong> All system requirements are met.
