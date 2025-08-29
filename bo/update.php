@@ -23,7 +23,17 @@ $updateStep = $_GET['step'] ?? 'check';
 $csrfToken = Security::generateCSRFToken();
 
 // Define critical directories and files that should not be overwritten during updates
+// CRITICAL_DIRECTORIES: These entire directories are protected from being overwritten
+// - config: Contains site-specific configuration and sensitive data
+// - uploads: Contains user-uploaded files
+// - logs: Contains system logs
+// - backups: Contains backup files
 $CRITICAL_DIRECTORIES = ['config', 'uploads', 'logs', 'backups'];
+
+// UPDATE_EXCLUDE_FILES: Specific files that should never be overwritten during updates
+// - config.php: Site-specific configuration file (generated during installation)
+// - .htaccess: Server-specific Apache configuration
+// - .ovhconfig: OVH hosting-specific configuration
 $UPDATE_EXCLUDE_FILES = ['config.php', '.htaccess', '.ovhconfig'];
 
 // GitHub API helper class
@@ -210,6 +220,62 @@ class FileScanner {
         // Check for hidden files and system files
         $basename = basename($path);
         if ($basename[0] === '.' || in_array($basename, ['LICENSE', 'README', 'CHANGELOG'])) {
+            return true;
+        }
+        
+        return false;
+    }
+}
+
+/**
+ * Configuration Protection Helper
+ * Ensures configuration files are properly protected during updates
+ */
+class ConfigProtector {
+    
+    /**
+     * Verify that configuration files exist and are properly protected
+     */
+    public static function verifyConfigProtection() {
+        $issues = [];
+        
+        // Check if config.php exists (it should after installation)
+        if (!file_exists(ROOT_PATH . '/config/config.php')) {
+            $issues[] = 'Configuration file config.php does not exist. System may not be properly installed.';
+        }
+        
+        // Check if .installed marker exists
+        if (!file_exists(ROOT_PATH . '/config/.installed')) {
+            $issues[] = 'Installation marker .installed does not exist. System may not be properly installed.';
+        }
+        
+        // Verify config.php is in .gitignore
+        $gitignorePath = ROOT_PATH . '/.gitignore';
+        if (file_exists($gitignorePath)) {
+            $gitignoreContent = file_get_contents($gitignorePath);
+            if (strpos($gitignoreContent, 'config/config.php') === false) {
+                $issues[] = 'config.php is not properly excluded in .gitignore file.';
+            }
+        }
+        
+        return $issues;
+    }
+    
+    /**
+     * Check if a file should be protected from updates
+     */
+    public static function isProtectedFile($filePath) {
+        global $CRITICAL_DIRECTORIES, $UPDATE_EXCLUDE_FILES;
+        
+        // Check if file is in a critical directory
+        foreach ($CRITICAL_DIRECTORIES as $criticalDir) {
+            if (strpos($filePath, $criticalDir . '/') === 0) {
+                return true;
+            }
+        }
+        
+        // Check if file is specifically excluded
+        if (in_array(basename($filePath), $UPDATE_EXCLUDE_FILES)) {
             return true;
         }
         
@@ -439,6 +505,13 @@ try {
                     throw new Exception('Update file not found');
                 }
                 
+                // Verify configuration protection before applying update
+                $configIssues = ConfigProtector::verifyConfigProtection();
+                if (!empty($configIssues)) {
+                    Logger::logUpdate("Configuration protection issues detected: " . implode(', ', $configIssues));
+                    // Continue with update but log the issues for review
+                }
+                
                 $updateFile = $_SESSION['update_file'];
                 Logger::logUpdate("Applying update from: " . basename($updateFile));
                 
@@ -474,20 +547,8 @@ try {
                     $relativePath = str_replace($sourceDir . '/', '', $file->getPathname());
                     $targetPath = ROOT_PATH . '/' . $relativePath;
                     
-                    // Skip critical directories and excluded files
-                    $skip = false;
-                    foreach ($CRITICAL_DIRECTORIES as $criticalDir) {
-                        if (strpos($relativePath, $criticalDir . '/') === 0) {
-                            $skip = true;
-                            break;
-                        }
-                    }
-                    
-                    if (in_array(basename($relativePath), $UPDATE_EXCLUDE_FILES)) {
-                        $skip = true;
-                    }
-                    
-                    if (!$skip && $file->isFile()) {
+                    // Check if file should be protected from updates
+                    if (!ConfigProtector::isProtectedFile($relativePath) && $file->isFile()) {
                         $targetDir = dirname($targetPath);
                         if (!is_dir($targetDir)) {
                             mkdir($targetDir, 0755, true);
