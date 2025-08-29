@@ -1,71 +1,38 @@
-# NotificationManager Module
+# NotificationManager Module - N3XT WEB
 
+## Vue d'ensemble
 
-## Overview
-The NotificationManager module provides email notification capabilities and messaging services for the N3XT WEB system.
-
-## Features
-- **Email Notifications**: SMTP-based email delivery
-- **Template System**: Customizable email templates
-- **Queue Management**: Email queue processing
-- **Delivery Tracking**: Email delivery status monitoring
-- **Multiple Recipients**: Support for multiple notification targets
-- **Event Integration**: Automatic notifications for system events
-- **Configuration Management**: Flexible SMTP configuration
-
-## Configuration
-Module configuration is stored in the `{prefix}notification_config` table:
-
-| Setting | Default | Description |
-|---------|---------|-------------|
-| `notification_enabled` | 1 | Enable notification system |
-| `notification_email_enabled` | 1 | Enable email notifications |
-| `notification_admin_email` | '' | Administrator email |
-| `notification_smtp_host` | '' | SMTP server host |
-| `notification_smtp_port` | 587 | SMTP server port |
-| `notification_smtp_user` | '' | SMTP username |
-| `notification_smtp_pass` | '' | SMTP password |
-| `notification_smtp_encryption` | tls | SMTP encryption type |
-| `notification_from_name` | N3XT WEB System | Email sender name |
-
-## Administration
-Notification management will be available through the back office.
-
-## Database Schema
-The module uses the `{prefix}notification_config` table for configuration.
-
-## Integration
-Integrates with EventManager for automatic event notifications.
-=======
-## Description
-
-Le module NotificationManager fournit un système complet de notifications pour le back office N3XT WEB. Il gère les notifications visuelles dans l'interface d'administration et les notifications par email.
+Le module NotificationManager fournit un système complet de notifications pour le back office N3XT WEB. Il gère les notifications visuelles en temps réel dans l'interface d'administration et les notifications par email, avec un système extensible pour différents types d'événements.
 
 ## Fonctionnalités
 
-### 📢 Notifications visuelles
-- Affichage en temps réel dans le back office
-- Système de priorités (low, medium, high, critical)
-- Interface de gestion (lecture, suppression)
-- Compteur de notifications non lues
+### 📢 Notifications visuelles en temps réel
+- Affichage instantané dans le back office avec interface moderne
+- Système de priorités intuitif (low, medium, high, critical)
+- Interface de gestion complète (lecture, suppression, filtrage)
+- Compteur dynamique de notifications non lues
+- Support des notifications persistantes et temporaires
 
-### 📧 Notifications par email
-- Envoi automatique par SMTP ou PHP mail()
-- Templates HTML personnalisables
-- Configuration flexible des types à envoyer
-- Support multi-destinataires
+### 📧 Notifications par email avancées
+- Envoi automatique par SMTP sécurisé ou PHP mail()
+- Templates HTML responsives et personnalisables
+- Configuration flexible des types d'événements à envoyer
+- Support multi-destinataires avec gestion des groupes
+- Système anti-spam avec limitation de fréquence
 
-### 📊 Gestion et historique
-- Historique complet des notifications
+### 📊 Gestion et historique complets
+- Historique détaillé de toutes les notifications envoyées
 - Nettoyage automatique des anciennes notifications
-- Statistiques détaillées par type et priorité
-- Interface d'administration complète
+- Statistiques complètes par type, priorité et utilisateur
+- Interface d'administration intuitive avec tableaux de bord
+- Export des données de notification pour analyse
 
-### 🔧 Extensibilité
-- Types de notifications personnalisables
-- Hooks pour d'autres modules
-- API simple pour créer des notifications
-- Système de métadonnées JSON
+### 🔧 Extensibilité et personnalisation
+- Types de notifications entièrement personnalisables
+- Hooks et API pour intégration avec d'autres modules
+- Système de templates modulaire pour emails
+- Métadonnées JSON flexibles pour données contextuelles
+- Architecture plugin-ready pour extensions
 
 ## Configuration
 
@@ -76,95 +43,43 @@ Le module NotificationManager fournit un système complet de notifications pour 
 | `enabled` | Active/désactive le module | `true` |
 | `email_enabled` | Notifications par email | `true` |
 | `visual_enabled` | Notifications visuelles | `true` |
-| `retention_days` | Durée de conservation | `30` |
+| `retention_days` | Durée de conservation (jours) | `30` |
 | `auto_email_types` | Types envoyés par email | `update,backup,maintenance,system` |
+| `smtp_enabled` | Utilisation SMTP | `false` |
+| `rate_limit` | Limite par heure et par type | `10` |
 
-## Utilisation
-
-### Créer une notification
+### Configuration via interface admin
 
 ```php
+// Accès au module
 $notificationManager = new NotificationManager();
 
-$notificationManager->createNotification(
-    'update',                    // Type
-    'Mise à jour disponible',    // Titre
-    'Version 2.1.0 disponible', // Message
-    'high',                      // Priorité
-    [                           // Données supplémentaires
-        'version' => '2.1.0',
-        'download_url' => 'https://...'
-    ],
-    null,                       // Utilisateur cible (null = tous)
-    null                        // Date d'expiration
-);
+// Configuration SMTP
+$notificationManager->setConfig('smtp_host', 'smtp.example.com');
+$notificationManager->setConfig('smtp_port', 587);
+$notificationManager->setConfig('smtp_user', 'user@example.com');
 ```
 
-### Types de notifications disponibles
+## Administration
 
-- **update** : Mises à jour système
-- **backup** : Opérations de sauvegarde
-- **maintenance** : Tâches de maintenance
-- **system** : Notifications système générales
-- **warning** : Avertissements
-- **error** : Erreurs critiques
+**Interface disponible :** `/bo/notifications.php`
 
-### Priorités
+### Tableau de bord
+- Compteur temps réel des notifications non lues
+- Statistiques des notifications par type et priorité
+- Statut du système de notification (email/visuel)
+- Historique des dernières notifications importantes
 
-- **low** : Information générale
-- **medium** : Information importante
-- **high** : Action recommandée
-- **critical** : Action urgente requise
+### Actions disponibles
+- Gestion complète des notifications (lecture, suppression, archivage)
+- Configuration des types de notifications et destinataires
+- Test du système email avec validation SMTP
+- Consultation de l'historique avec filtres avancés
 
-## API
-
-### Méthodes principales
-
-#### `createNotification($type, $title, $message, $priority, $data, $targetUser, $expiresAt)`
-Crée une nouvelle notification.
-
-#### `getNotifications($targetUser, $status, $limit)`
-Récupère les notifications filtrées.
-
-#### `markAsRead($notificationId, $userId)`
-Marque une notification comme lue.
-
-#### `dismiss($notificationId, $userId)`
-Ignore une notification.
-
-#### `getUnreadCount($targetUser)`
-Compte les notifications non lues.
-
-#### `cleanupOldNotifications()`
-Nettoie les anciennes notifications.
-
-## Configuration Email
-
-### SMTP
-```php
-Configuration::set('smtp_host', 'smtp.example.com');
-Configuration::set('smtp_port', 587);
-Configuration::set('smtp_user', 'user@example.com');
-Configuration::set('smtp_pass', 'password');
-Configuration::set('smtp_from', 'noreply@example.com');
-Configuration::set('smtp_from_name', 'N3XT WEB');
-```
-
-### PHP Mail
-Si aucune configuration SMTP n'est fournie, le système utilise la fonction `mail()` de PHP.
-
-## Templates Email
-
-Les emails utilisent des templates HTML responsives avec :
-- Design moderne et professionnel
-- Support des priorités avec couleurs
-- Informations contextuelles
-- Liens vers le back office
-- Footer personnalisable
-
-## Base de données
+## Schema de base de données
 
 ### Table `notifications`
+
 ```sql
 CREATE TABLE n3xt_notifications (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -184,45 +99,114 @@ CREATE TABLE n3xt_notifications (
 
 ## Intégration
 
-### Avec autres modules
-Le NotificationManager est automatiquement utilisé par :
-- **UpdateManager** : Notifications de mises à jour
-- **BackupManager** : Notifications de sauvegardes
-- **MaintenanceManager** : Notifications de maintenance
+### Avec les autres modules
 
-### Interface utilisateur
-- Compteur de notifications dans la navigation
-- Interface de gestion complète
-- Affichage temps réel des nouvelles notifications
+**UpdateManager :** Notifications automatiques des mises à jour
+- Notification de nouvelles versions disponibles
+- Alertes de fin de mise à jour (succès/échec)
+- Notifications de problèmes de compatibilité
 
-## Sécurité
+**BackupManager :** Notifications des opérations de sauvegarde
+- Confirmation de création de sauvegarde réussie
+- Alertes d'échec de sauvegarde avec détails
+- Notifications de nettoyage automatique des anciennes sauvegardes
 
-- Validation CSRF sur toutes les actions
-- Sanitation des entrées utilisateur
-- Limitation de la taille des messages
-- Protection contre l'injection de logs
-- Validation des types et priorités
+**MaintenanceManager :** Notifications de maintenance système
+- Rapports de fin de maintenance automatique
+- Alertes d'espace disque critique nécessitant action
+- Notifications de tâches de maintenance programmées
 
-## Performance
+### API et hooks
 
-- Nettoyage automatique des anciennes notifications
-- Indexation optimisée des requêtes
-- Limitation du nombre de notifications par utilisateur
-- Cache des compteurs de notifications non lues
+Le module expose les méthodes suivantes pour intégration :
+- `createNotification($type, $title, $message, $priority, $data)` : Crée une notification
+- `markAsRead($notificationId, $userId)` : Marque comme lue
+- `getUnreadCount($targetUser)` : Compte les notifications non lues
 
-## Extensibilité
+## Exemple d'utilisation
 
-### Ajouter un nouveau type
-1. Ajouter le type dans l'énumération de la base de données
-2. Mettre à jour la liste `$validTypes` dans la classe
-3. Ajouter l'icône dans `getTypeIcon()`
-4. Configurer l'envoi email si nécessaire
+### Créer une notification simple
 
-### Hooks personnalisés
 ```php
-// Écouter les nouvelles notifications
-add_action('notification_created', function($notificationId, $type) {
-    // Action personnalisée
-});
+$notificationManager = new NotificationManager();
+
+$notificationManager->createNotification(
+    'update',                    // Type
+    'Mise à jour disponible',    // Titre
+    'Version 2.1.0 disponible', // Message
+    'high',                      // Priorité
+    [                           // Données supplémentaires
+        'version' => '2.1.0',
+        'download_url' => 'https://...'
+    ],
+    null,                       // Utilisateur cible (null = tous)
+    null                        // Date d'expiration
+);
 ```
+
+### Gestion des notifications
+
+```php
+// Récupérer les notifications non lues
+$unreadNotifications = $notificationManager->getNotifications(null, 'unread', 10);
+
+foreach ($unreadNotifications as $notification) {
+    echo "Type: {$notification['type']}\n";
+    echo "Titre: {$notification['title']}\n";
+    echo "Priorité: {$notification['priority']}\n";
+}
+
+// Marquer comme lue
+$notificationManager->markAsRead($notificationId, $userId);
+
+// Obtenir le compte non lu
+$unreadCount = $notificationManager->getUnreadCount($userId);
+echo "Notifications non lues: {$unreadCount}\n";
+```
+
+### Configuration email avancée
+
+```php
+// Configuration SMTP complète
+$notificationManager->setEmailConfig([
+    'smtp_host' => 'smtp.example.com',
+    'smtp_port' => 587,
+    'smtp_user' => 'user@example.com',
+    'smtp_pass' => 'password',
+    'smtp_from' => 'noreply@example.com',
+    'smtp_from_name' => 'N3XT WEB System'
+]);
+
+// Test d'envoi
+$testResult = $notificationManager->testEmailConfiguration();
+if ($testResult['success']) {
+    echo "Configuration email fonctionnelle\n";
+}
+```
+
+## Principes communs
+
+### Sécurité
+- Protection CSRF sur toutes les actions de gestion des notifications
+- Validation et sanitation de tous les contenus de notifications
+- Limitation de la taille des messages pour éviter abus
+- Protection contre l'injection de logs et scripts malveillants
+
+### Configuration
+- Tous les paramètres de notification stockés en base de données
+- Configuration email sécurisée avec chiffrement des mots de passe
+- Valeurs par défaut sécurisées pour éviter spam et surcharge
+- Validation des paramètres de configuration avec retour utilisateur
+
+### Extensibilité
+- Architecture modulaire permettant ajout de nouveaux types facilement
+- Hooks disponibles pour extension par modules tiers
+- API standardisée pour intégration avec systèmes de notification externes
+- Système de templates extensible pour personnalisation avancée
+
+### Documentation
+- README complet avec exemples détaillés pour tous les cas d'usage
+- Commentaires dans le code pour toutes les fonctionnalités complexes
+- Documentation API complète avec exemples de retour
+- Guide de configuration email et dépannage des problèmes courants
 
