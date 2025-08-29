@@ -1,0 +1,21 @@
+# N3XT WEB - Backups Directory Protection
+# Deny all access to backup files
+
+# Disable directory browsing
+Options -Indexes
+IndexIgnore *
+
+# Deny access to all files
+<Files "*">
+    Require all denied
+</Files>
+
+# Deny access to backup file types
+<FilesMatch "\.(zip|sql|gz|tar|bak|backup)$">
+    Require all denied
+</FilesMatch>
+
+# Additional security headers
+<IfModule mod_headers.c>
+    Header always set X-Robots-Tag "noindex, nofollow, noarchive, nosnippet"
+</IfModule>

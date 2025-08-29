@@ -254,6 +254,16 @@ if (file_exists($accessLogFile)) {
                         </a>
                     </li>
                     <li class="nav-item">
+                        <a href="../security_scanner.php" class="nav-link" target="_blank">
+                            🔒 Scanner sécurité
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="../system_monitor.php" class="nav-link" target="_blank">
+                            📊 Monitoring système
+                        </a>
+                    </li>
+                    <li class="nav-item">
                         <a href="update.php" class="nav-link">
                             🔄 Mise à jour
                         </a>
@@ -351,6 +361,25 @@ if (file_exists($accessLogFile)) {
                                 <a href="restore.php" class="btn btn-success">Sauvegarde</a>
                                 <a href="?page=maintenance" class="btn btn-warning">Mode maintenance</a>
                                 <a href="?page=logs" class="btn btn-secondary">Voir les logs</a>
+                                <a href="../security_scanner.php?action=quick_check" class="btn btn-info" onclick="return checkSecurity()" target="_blank">Scanner sécurité</a>
+                                <a href="../system_monitor.php" class="btn btn-info" target="_blank">Monitoring</a>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="card">
+                        <div class="card-header">
+                            <h2 class="card-title">État de sécurité</h2>
+                        </div>
+                        <div class="card-body">
+                            <div id="security-status">
+                                <div style="text-align: center;">
+                                    <div style="margin: 20px 0;">Chargement du statut de sécurité...</div>
+                                </div>
+                            </div>
+                            <div style="margin-top: 15px;">
+                                <a href="../security_scanner.php?action=report" class="btn btn-sm btn-outline-primary" target="_blank">Rapport complet</a>
+                                <a href="../cleanup.php?action=security_scan" class="btn btn-sm btn-outline-secondary" onclick="return runSecurityScan()">Scanner maintenant</a>
                             </div>
                         </div>
                     </div>
@@ -794,6 +823,59 @@ if (file_exists($accessLogFile)) {
                 window.location.reload();
             }
         }, 30000);
+        
+        // Load security status on dashboard
+        function loadSecurityStatus() {
+            fetch('../cleanup.php?action=security_scan')
+                .then(response => response.json())
+                .then(data => {
+                    const statusDiv = document.getElementById('security-status');
+                    if (data.error) {
+                        statusDiv.innerHTML = '<div style="color: #e74c3c;">⚠️ Erreur lors du scan de sécurité</div>';
+                        return;
+                    }
+                    
+                    let statusHtml = '';
+                    let overallStatus = 'good';
+                    
+                    if (data.critical_issues && data.critical_issues.length > 0) {
+                        overallStatus = 'critical';
+                        statusHtml += '<div style="color: #e74c3c; margin-bottom: 10px;"><strong>🚨 ' + data.critical_issues.length + ' problème(s) critique(s)</strong></div>';
+                    }
+                    
+                    if (data.warnings && data.warnings.length > 0) {
+                        if (overallStatus === 'good') overallStatus = 'warning';
+                        statusHtml += '<div style="color: #f39c12; margin-bottom: 10px;"><strong>⚠️ ' + data.warnings.length + ' avertissement(s)</strong></div>';
+                    }
+                    
+                    if (overallStatus === 'good') {
+                        statusHtml = '<div style="color: #27ae60;">✅ Système sécurisé</div>';
+                    }
+                    
+                    statusHtml += '<div style="margin-top: 10px; font-size: 14px;">Score de sécurité: <strong>' + (data.score || 100) + '/100</strong></div>';
+                    
+                    statusDiv.innerHTML = statusHtml;
+                })
+                .catch(error => {
+                    console.error('Security status error:', error);
+                    document.getElementById('security-status').innerHTML = '<div style="color: #7f8c8d;">Impossible de charger le statut</div>';
+                });
+        }
+        
+        // Load security status when page loads
+        loadSecurityStatus();
+        
+        function checkSecurity() {
+            loadSecurityStatus();
+            return true;
+        }
+        
+        function runSecurityScan() {
+            const statusDiv = document.getElementById('security-status');
+            statusDiv.innerHTML = '<div style="text-align: center;">🔄 Scan en cours...</div>';
+            loadSecurityStatus();
+            return false;
+        }
         <?php endif; ?>
         
         // Session timeout warning
