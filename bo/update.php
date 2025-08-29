@@ -22,6 +22,10 @@ $messageType = '';
 $updateStep = $_GET['step'] ?? 'check';
 $csrfToken = Security::generateCSRFToken();
 
+// Define critical directories and files that should not be overwritten during updates
+$CRITICAL_DIRECTORIES = ['config', 'uploads', 'logs', 'backups'];
+$UPDATE_EXCLUDE_FILES = ['config.php', '.htaccess', '.ovhconfig'];
+
 // GitHub API helper class
 class GitHubUpdater {
     private $owner;
@@ -422,6 +426,11 @@ try {
                 break;
                 
             case 'apply_update':
+                // Check if backup was created in this session
+                if (!isset($_SESSION['backup_file']) || !file_exists($_SESSION['backup_file'])) {
+                    throw new Exception('Backup obligatoire requis avant mise à jour. Veuillez créer une sauvegarde d\'abord.');
+                }
+                
                 if (!isset($_SESSION['update_file']) || !file_exists($_SESSION['update_file'])) {
                     throw new Exception('Update file not found');
                 }
@@ -611,24 +620,30 @@ function deleteDirectory($dir) {
                             </div>
                         </div>
                         
-                        <!-- Step 2: Create Backup -->
+                        <!-- Step 2: Create Backup (Mandatory) -->
                         <div class="card" style="margin-bottom: 20px;">
                             <div class="card-header">
-                                <h3 class="card-title">Step 2: Create Backup</h3>
+                                <h3 class="card-title">Step 2: Create Backup (OBLIGATOIRE)</h3>
                             </div>
                             <div class="card-body">
-                                <p>Create a full system backup before applying updates.</p>
+                                <div class="alert alert-warning">
+                                    <strong>Étape obligatoire:</strong> Une sauvegarde complète doit être créée et téléchargée avant d'appliquer toute mise à jour.
+                                </div>
+                                <p>Créez une sauvegarde complète du système avant d'appliquer les mises à jour.</p>
                                 <form method="POST" style="display: inline;">
                                     <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrfToken); ?>">
                                     <input type="hidden" name="action" value="create_backup">
-                                    <button type="submit" class="btn btn-success">Create Backup</button>
+                                    <button type="submit" class="btn btn-success">Créer la sauvegarde</button>
                                 </form>
                                 
                                 <?php if (isset($_SESSION['backup_file'])): ?>
                                     <div style="margin-top: 15px; padding: 15px; background: #e8f5e8; border-radius: 4px;">
-                                        <p><strong>Backup created:</strong> <?php echo basename($_SESSION['backup_file']); ?></p>
+                                        <p><strong>✓ Sauvegarde créée:</strong> <?php echo basename($_SESSION['backup_file']); ?></p>
                                         <a href="restore.php?download=<?php echo urlencode(basename($_SESSION['backup_file'])); ?>" 
-                                           class="btn btn-secondary">Download Backup</a>
+                                           class="btn btn-secondary">⬇️ Télécharger la sauvegarde</a>
+                                        <div style="margin-top: 10px; padding: 10px; background: #fff3cd; border-radius: 4px;">
+                                            <strong>Important:</strong> Téléchargez impérativement cette sauvegarde sur votre ordinateur avant de continuer !
+                                        </div>
                                     </div>
                                 <?php endif; ?>
                             </div>
@@ -702,18 +717,37 @@ function deleteDirectory($dir) {
                             </div>
                             <div class="card-body">
                                 <div class="alert alert-danger">
-                                    <strong>Warning:</strong> This will replace system files. Make sure you have a backup!
+                                    <strong>Attention:</strong> Cette opération va remplacer les fichiers système. Assurez-vous d'avoir téléchargé votre sauvegarde !
                                 </div>
+                                
+                                <?php 
+                                $canApplyUpdate = isset($_SESSION['update_file']) && isset($_SESSION['backup_file']) && file_exists($_SESSION['backup_file']);
+                                if (!$canApplyUpdate && !isset($_SESSION['backup_file'])): ?>
+                                    <div class="alert alert-warning">
+                                        <strong>Sauvegarde requise:</strong> Vous devez d'abord créer une sauvegarde avant d'appliquer la mise à jour.
+                                    </div>
+                                <?php endif; ?>
                                 
                                 <form method="POST" style="display: inline;">
                                     <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrfToken); ?>">
                                     <input type="hidden" name="action" value="apply_update">
                                     <button type="submit" class="btn btn-danger" 
-                                            <?php echo !isset($_SESSION['update_file']) ? 'disabled' : ''; ?>
-                                            onclick="return confirm('Are you sure you want to apply the update? This action cannot be undone without a backup.')">
-                                        Apply Update
+                                            <?php echo !$canApplyUpdate ? 'disabled' : ''; ?>
+                                            onclick="return confirm('Êtes-vous sûr de vouloir appliquer la mise à jour ? Cette action ne peut pas être annulée sans sauvegarde. Avez-vous téléchargé votre sauvegarde ?')">
+                                        Appliquer la mise à jour
                                     </button>
                                 </form>
+                                
+                                <?php if (!$canApplyUpdate): ?>
+                                    <p style="margin-top: 10px; color: #666; font-size: 14px;">
+                                        <?php if (!isset($_SESSION['backup_file'])): ?>
+                                            ❌ Sauvegarde manquante
+                                        <?php endif; ?>
+                                        <?php if (!isset($_SESSION['update_file'])): ?>
+                                            ❌ Fichier de mise à jour manquant
+                                        <?php endif; ?>
+                                    </p>
+                                <?php endif; ?>
                             </div>
                         </div>
                     </div>
