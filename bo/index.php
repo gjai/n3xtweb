@@ -229,6 +229,11 @@ if (file_exists($accessLogFile)) {
                         </a>
                     </li>
                     <li class="nav-item">
+                        <a href="../index.php" class="nav-link" target="_blank" style="color: #27ae60;">
+                            🌍 Voir le site
+                        </a>
+                    </li>
+                    <li class="nav-item">
                         <a href="?page=showcase" class="nav-link <?php echo $currentPage === 'showcase' ? 'active' : ''; ?>">
                             🌐 Site vitrine
                         </a>
