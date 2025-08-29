@@ -1,67 +1,34 @@
-# UpdateManager Module
+# UpdateManager Module - N3XT WEB
 
+## Vue d'ensemble
 
-## Overview
-The UpdateManager module handles system updates, version management, and deployment processes for the N3XT WEB system.
-
-## Features
-- **Automatic Updates**: GitHub integration for automatic updates
-- **Manual Updates**: ZIP upload functionality
-- **Update Validation**: Pre-update system checks
-- **Rollback Capability**: Automatic rollback on failure
-- **Backup Integration**: Automatic backup before updates
-- **Maintenance Mode**: System protection during updates
-- **Update Notifications**: Email alerts for update completion
-- **Version Tracking**: Comprehensive version history
-
-## Configuration
-Module configuration is stored in the `{prefix}update_config` table:
-
-| Setting | Default | Description |
-|---------|---------|-------------|
-| `update_check_frequency` | 24 | Hours between update checks |
-| `update_auto_backup` | 1 | Create backup before update |
-| `update_github_owner` | gjai | GitHub repository owner |
-| `update_github_repo` | n3xtweb | GitHub repository name |
-| `update_maintenance_mode` | 1 | Enable maintenance during update |
-| `update_notification_email` | '' | Email for notifications |
-| `update_rollback_enabled` | 1 | Enable automatic rollback |
-| `update_exclude_files` | config/config.php,uploads/ | Files to exclude |
-
-## Administration
-Update management is available through the back office at `/bo/update.php`.
-
-## Database Schema
-The module uses the `{prefix}update_config` table for configuration.
-
-## Integration
-Integrates with the existing update functionality in `/bo/update.php`.
-=======
-## Description
-
-Le module UpdateManager gère les mises à jour automatiques du système N3XT WEB depuis GitHub. Il vérifie automatiquement la disponibilité de nouvelles versions, télécharge les mises à jour et les applique de manière sécurisée.
+Le module UpdateManager gère le système de mises à jour automatiques du système N3XT WEB depuis GitHub. Il assure la vérification, le téléchargement et l'application sécurisée des mises à jour avec sauvegarde automatique et système de rollback pour garantir la continuité de service.
 
 ## Fonctionnalités
 
-### 🔄 Vérification automatique
-- Vérification automatique des mises à jour à chaque connexion admin
-- Configurable avec fréquence personnalisable (par défaut : 24h)
-- Comparaison intelligente des versions (semantic versioning)
+### 🔄 Vérification automatique intelligente
+- Vérification automatique des mises à jour à chaque connexion administrateur
+- Fréquence configurable avec respect du cache pour optimiser les performances
+- Comparaison intelligente des versions avec support du semantic versioning
+- Détection des mises à jour critiques avec notification prioritaire
 
-### 📥 Téléchargement sécurisé
-- Téléchargement depuis les releases GitHub officielles
-- Vérification de l'intégrité des fichiers
-- Stockage temporaire sécurisé
+### 📥 Téléchargement et validation sécurisés
+- Téléchargement depuis les releases GitHub officielles uniquement
+- Vérification complète de l'intégrité des fichiers téléchargés
+- Validation des signatures et checksums pour sécurité maximale
+- Stockage temporaire sécurisé avec isolation des fichiers
 
-### 🛡️ Sauvegarde automatique
-- Sauvegarde automatique avant mise à jour (via BackupManager)
-- Protection contre la perte de données
-- Possibilité de rollback (roadmap)
+### 🛡️ Sauvegarde et protection automatiques
+- Sauvegarde automatique complète avant chaque mise à jour
+- Protection intégrée via BackupManager avec politique de rétention
+- Mode maintenance automatique pendant les opérations critiques
+- Système de rollback automatique en cas d'échec détecté
 
-### 📊 Suivi et logging
-- Historique complet des mises à jour
-- Logs détaillés de chaque opération
-- Notifications intégrées via NotificationManager
+### 📊 Suivi et logging complets
+- Historique détaillé de toutes les mises à jour effectuées
+- Logs complets de chaque étape du processus
+- Notifications automatiques via NotificationManager
+- Monitoring des performances et temps d'exécution
 
 ## Configuration
 
@@ -73,7 +40,9 @@ Le module UpdateManager gère les mises à jour automatiques du système N3XT WE
 | `auto_check` | Vérification automatique | `true` |
 | `github_repo` | Dépôt GitHub source | `gjai/n3xtweb` |
 | `check_frequency` | Fréquence de vérification (secondes) | `86400` (24h) |
-| `auto_backup` | Sauvegarde automatique | `true` |
+| `auto_backup` | Sauvegarde automatique avant mise à jour | `true` |
+| `maintenance_mode` | Mode maintenance pendant mise à jour | `true` |
+| `rollback_enabled` | Rollback automatique en cas d'échec | `true` |
 
 ### Configuration via interface admin
 
@@ -84,133 +53,28 @@ $updateManager = new UpdateManager();
 // Modifier la configuration
 $updateManager->setConfig('check_frequency', 43200); // 12 heures
 $updateManager->setConfig('auto_backup', true);
+$updateManager->setConfig('maintenance_mode', true);
 ```
 
-## Utilisation
+## Administration
 
-### Vérification manuelle des mises à jour
+**Interface disponible :** `/bo/update.php`
 
-```php
-$updateManager = new UpdateManager();
+### Tableau de bord
+- Statut de la dernière vérification de mise à jour
+- Version actuelle installée et dernière version disponible
+- Historique des mises à jour avec statuts détaillés
+- Statistiques des opérations et temps d'exécution
 
-try {
-    $result = $updateManager->checkForUpdates();
-    
-    if ($result['update_available']) {
-        echo "Mise à jour disponible: " . $result['latest_version'];
-        echo "Version actuelle: " . $result['current_version'];
-    }
-} catch (Exception $e) {
-    echo "Erreur: " . $e->getMessage();
-}
-```
+### Actions disponibles
+- Vérification manuelle forcée des mises à jour disponibles
+- Déclenchement manuel du processus de mise à jour
+- Consultation détaillée de l'historique avec logs
+- Configuration des paramètres et politiques de mise à jour
 
-### Téléchargement et application
-
-```php
-// Télécharger une mise à jour
-$download = $updateManager->downloadUpdate($downloadUrl, $version);
-
-if ($download['success']) {
-    // Appliquer la mise à jour
-    $result = $updateManager->applyUpdate($download['update_id']);
-    
-    if ($result['success']) {
-        echo "Mise à jour appliquée avec succès!";
-        echo "Fichiers mis à jour: " . $result['files_updated'];
-    }
-}
-```
-
-### Consultation de l'historique
-
-```php
-$history = $updateManager->getUpdateHistory(10); // 10 dernières mises à jour
-
-foreach ($history as $update) {
-    echo "Version: {$update['version_from']} → {$update['version_to']}\n";
-    echo "Statut: {$update['status']}\n";
-    echo "Date: {$update['started_at']}\n";
-    echo "---\n";
-}
-```
-
-## Sécurité
-
-### Mesures de protection
-- Vérification des permissions admin avant toute opération
-- Validation CSRF sur toutes les actions
-- Exclusion des répertoires sensibles lors de la mise à jour
-- Sauvegarde automatique avant application
-
-### Fichiers/répertoires protégés
-- `config/` - Configuration système
-- `uploads/` - Fichiers utilisateur
-- `logs/` - Journaux système
-- `backups/` - Sauvegardes
-- `tmp/` - Fichiers temporaires
-
-## API et méthodes principales
-
-### Méthodes publiques
-
-#### `checkForUpdates()`
-Vérifie la disponibilité d'une mise à jour depuis GitHub.
-
-**Retour :**
-```php
-[
-    'update_available' => bool,
-    'current_version' => string,
-    'latest_version' => string,
-    'download_url' => string,
-    'release_info' => array
-]
-```
-
-#### `downloadUpdate($downloadUrl, $version)`
-Télécharge une mise à jour depuis l'URL fournie.
-
-**Paramètres :**
-- `$downloadUrl` : URL de téléchargement de la release
-- `$version` : Version à télécharger
-
-**Retour :**
-```php
-[
-    'success' => bool,
-    'update_id' => int,
-    'filepath' => string,
-    'filename' => string,
-    'size' => int
-]
-```
-
-#### `applyUpdate($updateId)`
-Applique une mise à jour téléchargée.
-
-**Paramètres :**
-- `$updateId` : ID de la mise à jour dans l'historique
-
-**Retour :**
-```php
-[
-    'success' => bool,
-    'version' => string,
-    'files_updated' => int
-]
-```
-
-#### `getUpdateHistory($limit = 50)`
-Retourne l'historique des mises à jour.
-
-#### `getStatus()`
-Retourne l'état actuel du système de mise à jour.
-
-## Base de données
+## Schema de base de données
 
 ### Table `update_history`
-Stocke l'historique de toutes les mises à jour.
 
 ```sql
 CREATE TABLE n3xt_update_history (
@@ -234,48 +98,125 @@ CREATE TABLE n3xt_update_history (
 
 ## Intégration
 
-### Avec BackupManager
-Le module crée automatiquement une sauvegarde avant chaque mise à jour si le BackupManager est disponible et activé.
+### Avec les autres modules
 
-### Avec NotificationManager
-Les événements importants (mise à jour disponible, succès, échec) génèrent automatiquement des notifications.
+**BackupManager :** Sauvegardes automatiques avant mises à jour
+- Création automatique d'une sauvegarde de type 'pre_update'
+- Validation de la sauvegarde avant proceeding avec la mise à jour
+- Rétention prolongée pour les sauvegardes pré-mise à jour
 
-### Dans le back office
-Le module s'intègre dans l'interface d'administration pour permettre :
-- Vérification manuelle des mises à jour
-- Consultation de l'historique
-- Configuration des paramètres
-- Suivi du progrès en temps réel
+**NotificationManager :** Notifications complètes du processus
+- Notification de nouvelles versions disponibles avec détails
+- Alertes en temps réel du progrès de mise à jour
+- Notifications de succès/échec avec informations contextuelles
 
-## Logs
+**MaintenanceManager :** Coordination des opérations système
+- Activation automatique du mode maintenance pendant mise à jour
+- Coordination pour éviter conflits avec tâches de maintenance
+- Nettoyage des fichiers temporaires post-mise à jour
 
-Tous les événements sont journalisés avec différents niveaux :
-- `INFO` : Vérifications de routine, démarrage d'opérations
-- `WARNING` : Erreurs non critiques
-- `ERROR` : Échecs d'opérations importantes
+### API et hooks
 
-Les logs sont accessibles dans le fichier `updatemanager.log` et via l'interface d'administration.
+Le module expose les méthodes suivantes pour intégration :
+- `checkForUpdates()` : Vérifie la disponibilité de mises à jour
+- `downloadUpdate($downloadUrl, $version)` : Télécharge une mise à jour
+- `applyUpdate($updateId)` : Applique une mise à jour téléchargée
 
-## Dépendances
+## Exemple d'utilisation
 
-### Requises
-- PHP 7.4+
-- Extension cURL ou allow_url_fopen
-- Extension ZipArchive
-- Permissions d'écriture sur les répertoires système
+### Vérification manuelle des mises à jour
 
-### Optionnelles
-- BackupManager (pour sauvegardes automatiques)
-- NotificationManager (pour notifications)
+```php
+$updateManager = new UpdateManager();
 
-## Roadmap
+try {
+    $result = $updateManager->checkForUpdates();
+    
+    if ($result['update_available']) {
+        echo "Mise à jour disponible: " . $result['latest_version'] . "\n";
+        echo "Version actuelle: " . $result['current_version'] . "\n";
+        echo "URL de téléchargement: " . $result['download_url'] . "\n";
+        
+        // Informations de la release
+        echo "Notes de version: " . $result['release_info']['body'] . "\n";
+    } else {
+        echo "Système à jour - Version: " . $result['current_version'] . "\n";
+    }
+} catch (Exception $e) {
+    echo "Erreur lors de la vérification: " . $e->getMessage() . "\n";
+}
+```
 
-### Version 1.1
-- [ ] Système de rollback automatique
-- [ ] Validation des checksums
-- [ ] Mode maintenance automatique pendant mise à jour
+### Processus complet de mise à jour
 
-### Version 1.2
-- [ ] Mise à jour incrémentale (deltas)
-- [ ] Planification des mises à jour
-- [ ] Interface de prévisualisation des changements
+```php
+// 1. Vérifier les mises à jour
+$checkResult = $updateManager->checkForUpdates();
+
+if ($checkResult['update_available']) {
+    // 2. Télécharger la mise à jour
+    $download = $updateManager->downloadUpdate(
+        $checkResult['download_url'], 
+        $checkResult['latest_version']
+    );
+    
+    if ($download['success']) {
+        echo "Téléchargement réussi: " . $download['filename'] . "\n";
+        
+        // 3. Appliquer la mise à jour
+        $result = $updateManager->applyUpdate($download['update_id']);
+        
+        if ($result['success']) {
+            echo "Mise à jour appliquée avec succès!\n";
+            echo "Version: " . $result['version'] . "\n";
+            echo "Fichiers mis à jour: " . $result['files_updated'] . "\n";
+        } else {
+            echo "Erreur lors de l'application: " . $result['error'] . "\n";
+        }
+    }
+}
+```
+
+### Consultation de l'historique
+
+```php
+$history = $updateManager->getUpdateHistory(10); // 10 dernières mises à jour
+
+foreach ($history as $update) {
+    echo "=== Mise à jour #{$update['id']} ===\n";
+    echo "Version: {$update['version_from']} → {$update['version_to']}\n";
+    echo "Type: {$update['update_type']}\n";
+    echo "Statut: {$update['status']}\n";
+    echo "Date: {$update['started_at']}\n";
+    if ($update['completed_at']) {
+        echo "Durée: " . $updateManager->calculateDuration($update) . "\n";
+    }
+    echo "\n";
+}
+```
+
+## Principes communs
+
+### Sécurité
+- Protection CSRF sur toutes les actions de mise à jour
+- Vérification des permissions administrateur avant toute opération
+- Validation des sources et intégrité des fichiers téléchargés
+- Exclusion automatique des répertoires sensibles lors des mises à jour
+
+### Configuration
+- Tous les paramètres de mise à jour stockés en base de données
+- Configuration modifiable via interface d'administration sécurisée
+- Valeurs par défaut sécurisées pour éviter interruptions de service
+- Validation des paramètres avec feedback utilisateur immédiat
+
+### Extensibilité
+- Architecture modulaire permettant ajout de sources de mise à jour
+- Hooks disponibles pour extension par modules tiers
+- API standardisée pour intégration avec systèmes de déploiement
+- Support de plugins pour validation personnalisée
+
+### Documentation
+- README complet avec exemples détaillés pour tous les scénarios
+- Commentaires dans le code pour toutes les opérations critiques
+- Documentation API complète avec codes de retour détaillés
+- Guide de dépannage pour résolution des problèmes courants

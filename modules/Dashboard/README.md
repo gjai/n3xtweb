@@ -1,336 +1,267 @@
-# Module Dashboard - N3XT WEB
-
-Ce module gère le tableau de bord principal et les notifications système du back office N3XT WEB.
+# Dashboard Module - N3XT WEB
 
 ## Vue d'ensemble
 
-Le module Dashboard fournit une interface centralisée pour surveiller l'état du système, gérer les notifications et afficher les informations importantes en temps réel.
+Le module Dashboard fournit un système complet de tableau de bord modulaire pour le back office N3XT WEB. Il gère l'interface centralisée de surveillance du système, l'affichage des widgets dynamiques, et la gestion intelligente des notifications avec une architecture extensible et personnalisable.
 
-## Widgets disponibles
+## Fonctionnalités
 
-### SystemNotificationsWidget
+### 📊 Tableau de bord modulaire et personnalisable
+- Interface drag & drop pour réorganisation des widgets en temps réel
+- Système de grille responsive avec redimensionnement flexible
+- Personnalisation par utilisateur avec sauvegarde des préférences
+- Support de widgets personnalisés avec API complète
 
-Widget principal qui affiche les notifications système et les alertes importantes du back office.
+### 📢 Système de notifications intelligent
+- Affichage centralisé des notifications avec priorisation automatique
+- Gestion multi-niveaux (critique, élevée, moyenne, faible) avec codes couleur
+- Système de filtrage avancé par type, date et statut
+- Actions rapides (lecture, suppression, planification) avec interface intuitive
 
-#### Fonctionnalités
+### 📈 Surveillance système en temps réel
+- Monitoring continu des services critiques (BDD, fichiers, réseau)
+- Indicateurs de performance avec seuils d'alerte configurables
+- Tableau de bord de santé système avec statuts visuels
+- Historique des métriques avec tendances et analyses
 
-- **Notifications système** : Affichage des alertes et messages importants
-- **Statut système** : Surveillance en temps réel de l'état des services
-- **Résumé d'activité** : Vue d'ensemble des événements récents
-- **Gestion des alertes** : Interface pour traiter les notifications
+### 🔧 Widgets extensibles et intégrés
+- Catalogue de widgets pré-construits pour tous les modules
+- API standardisée pour développement de widgets personnalisés
+- Système de cache intelligent pour optimiser les performances
+- Configuration granulaire par widget avec prévisualisation
 
-#### Configuration
+## Configuration
+
+### Paramètres disponibles
+
+| Paramètre | Description | Valeur par défaut |
+|-----------|-------------|-------------------|
+| `enabled` | Active/désactive le module | `true` |
+| `auto_refresh` | Actualisation automatique des widgets | `true` |
+| `refresh_interval` | Intervalle de rafraîchissement (secondes) | `60` |
+| `max_notifications` | Nombre max de notifications affichées | `10` |
+| `widget_cache_enabled` | Cache des données de widgets | `true` |
+| `user_customization` | Personnalisation par utilisateur | `true` |
+| `sound_alerts` | Alertes sonores pour notifications critiques | `false` |
+
+### Configuration via interface admin
 
 ```php
-$config = [
-    'enabled' => true,
-    'title' => 'Notifications système',
-    'description' => 'Affiche les notifications système et les alertes importantes',
-    'refresh_interval' => 60, // 1 minute
-    'max_notifications' => 10,
-    'show_priorities' => ['high', 'medium', 'low'],
-    'auto_refresh' => true,
-    'sound_alerts' => false
-];
+// Accès au module
+$dashboardManager = new DashboardManager();
+
+// Configuration des widgets
+$dashboardManager->configureWidget('system_status', [
+    'refresh_interval' => 30,
+    'show_alerts' => true,
+    'max_items' => 5
+]);
+
+// Personnalisation utilisateur
+$dashboardManager->setUserLayout($userId, $layoutConfig);
 ```
 
-#### Utilisation
+## Administration
 
-```php
-// Instanciation du widget
-$widget = new SystemNotificationsWidget();
+**Interface disponible :** `/bo/dashboard.php`
 
-// Récupération des données
-$data = $widget->getData();
-
-// Rendu HTML
-echo $widget->render();
-```
-
-#### Structure des données
-
-```php
-$data = [
-    'notifications' => [
-        [
-            'id' => int,
-            'type' => string,
-            'priority' => string, // critical, high, medium, low
-            'title' => string,
-            'message' => string,
-            'created_at' => string,
-            'status' => string, // active, read, dismissed
-            'icon' => string,
-            'action_url' => string|null
-        ]
-    ],
-    'summary' => [
-        'total' => int,
-        'by_priority' => array,
-        'by_type' => array,
-        'unread' => int
-    ],
-    'system_status' => [
-        'overall' => string, // good, warning, critical
-        'services' => array,
-        'uptime' => array,
-        'last_check' => string
-    ],
-    'recent_activities' => array,
-    'last_updated' => string
-];
-```
-
-## Types de notifications
-
-### Système
-- Mises à jour disponibles
-- Erreurs de configuration
-- Problèmes de performance
-- États des services
-
-### Sécurité
-- Tentatives de connexion suspectes
-- Alertes de sécurité
-- Mises à jour de sécurité
-- Scan de vulnérabilités
-
-### Maintenance
-- Sauvegardes terminées
-- Nettoyage automatique
-- Tâches de maintenance
-- Optimisations
-
-### Avertissements
-- Espace disque faible
-- Ressources limitées
-- Configurations obsolètes
-- Erreurs mineures
-
-## Surveillance système
-
-### Services surveillés
-
-#### Base de données
-- **État** : Connectivité et réactivité
-- **Performance** : Temps de réponse des requêtes
-- **Espace** : Utilisation de l'espace disque
-- **Intégrité** : Vérification de la structure
-
-#### Système de fichiers
-- **Espace disque** : Surveillance de l'espace disponible
-- **Permissions** : Vérification des droits d'accès
-- **Intégrité** : Contrôle des fichiers critiques
-- **Sauvegardes** : État des backups automatiques
-
-#### Sécurité
-- **Firewall** : État et configuration
-- **SSL/TLS** : Certificats et chiffrement
-- **Authentification** : Systèmes d'accès
-- **Mises à jour** : Patches de sécurité
-
-#### Performance
-- **Mémoire** : Utilisation RAM et swap
-- **CPU** : Charge processeur
-- **Réseau** : Connectivité et bande passante
-- **Cache** : Efficacité du système de cache
-
-### Indicateurs de statut
-
-- 🟢 **BON** : Tous les systèmes fonctionnent normalement
-- 🟡 **ATTENTION** : Problème mineur nécessitant surveillance
-- 🔴 **CRITIQUE** : Intervention immédiate requise
-
-## Gestion des notifications
-
-### Priorités
-
-#### Critique
-- Pannes système majeures
-- Failles de sécurité critiques
-- Perte de données imminente
-- Services indisponibles
-
-#### Élevée
-- Problèmes de performance
-- Alertes de sécurité importantes
-- Erreurs de configuration
-- Ressources critiques
-
-#### Moyenne
-- Mises à jour disponibles
-- Avertissements de maintenance
-- Optimisations recommandées
-- Notifications informatives
-
-#### Faible
-- Informations générales
-- Conseils d'optimisation
-- Rappels de maintenance
-- Confirmations d'actions
+### Tableau de bord
+- Vue d'ensemble en temps réel de l'état de tous les systèmes
+- Widgets configurables avec données actualisées automatiquement
+- Centre de notifications avec gestion des priorités
+- Métriques de performance avec graphiques interactifs
 
 ### Actions disponibles
+- Configuration et personnalisation complète des widgets
+- Gestion des notifications avec actions en lot
+- Export des données et métriques pour analyse externe
+- Administration des permissions et accès par utilisateur
 
-- **Marquer comme lu** : Masquer de la vue principale
-- **Ignorer** : Supprimer définitivement
-- **Planifier** : Reporter le traitement
-- **Voir détails** : Accéder aux informations complètes
+## Schema de base de données
 
-## Tableaux de bord personnalisés
+### Table `dashboard_widgets`
 
-### Widgets configurables
-- Drag & drop pour réorganiser
-- Redimensionnement flexible
-- Masquage/affichage selon besoins
-- Personnalisation par utilisateur
-
-### Métriques disponibles
-- Statistiques de trafic
-- Performance système
-- Activité utilisateurs
-- Statuts des modules
-
-### Filtres et recherche
-- Filtrage par date/période
-- Recherche dans notifications
-- Tri par priorité/type
-- Export des données
-
-## API de notifications
-
-### Création de notifications
-
-```php
-// Notification simple
-NotificationManager::create([
-    'type' => 'system',
-    'priority' => 'medium',
-    'title' => 'Titre de la notification',
-    'message' => 'Contenu du message',
-    'target_user' => null // null = tous les admins
-]);
-
-// Notification avec action
-NotificationManager::create([
-    'type' => 'warning',
-    'priority' => 'high',
-    'title' => 'Espace disque faible',
-    'message' => 'L\'espace disque est inférieur à 1GB',
-    'action_url' => '/admin/maintenance',
-    'expires_at' => date('Y-m-d H:i:s', strtotime('+1 day'))
-]);
+```sql
+CREATE TABLE n3xt_dashboard_widgets (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    widget_id VARCHAR(50) NOT NULL,
+    user_id VARCHAR(50) NULL,
+    position_x INT NOT NULL DEFAULT 0,
+    position_y INT NOT NULL DEFAULT 0,
+    width INT NOT NULL DEFAULT 4,
+    height INT NOT NULL DEFAULT 4,
+    config JSON NULL,
+    is_active BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
 ```
 
-### Gestion programmatique
+### Table `dashboard_notifications`
 
-```php
-// Marquer comme lue
-NotificationManager::markAsRead($notificationId, $userId);
-
-// Supprimer
-NotificationManager::delete($notificationId);
-
-// Obtenir les notifications d'un utilisateur
-$notifications = NotificationManager::getForUser($userId, [
-    'limit' => 10,
-    'priority' => ['high', 'critical'],
-    'unread_only' => true
-]);
+```sql
+CREATE TABLE n3xt_dashboard_notifications (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    type ENUM('system', 'security', 'maintenance', 'warning', 'info') NOT NULL,
+    priority ENUM('critical', 'high', 'medium', 'low') DEFAULT 'medium',
+    title VARCHAR(255) NOT NULL,
+    message TEXT NOT NULL,
+    target_user VARCHAR(50) NULL,
+    action_url VARCHAR(500) NULL,
+    status ENUM('active', 'read', 'dismissed') DEFAULT 'active',
+    expires_at TIMESTAMP NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
 ```
 
 ## Intégration
 
-### Avec d'autres modules
-- **SecurityManager** : Reçoit les alertes de sécurité
-- **MaintenanceManager** : Notifications de maintenance
-- **BackupManager** : États des sauvegardes
-- **UpdateManager** : Alertes de mises à jour
+### Avec les autres modules
 
-### Webhooks et API
-- Notifications via webhook externe
-- API REST pour intégrations tierces
-- Support des notifications push
-- Intégration email/SMS
+**SecurityManager :** Intégration des alertes de sécurité
+- Affichage prioritaire des alertes de sécurité critiques
+- Widget dédié pour surveillance des tentatives d'intrusion
+- Notifications automatiques des événements de sécurité importants
 
-## Configuration avancée
+**MaintenanceManager :** Monitoring des tâches de maintenance
+- Widget de statut des maintenances avec planning automatique
+- Notifications de fin de maintenance avec résumé détaillé
+- Intégration dans le monitoring global de santé système
 
-### Paramètres de notification
+**BackupManager :** Surveillance des sauvegardes
+- Widget de statut des sauvegardes avec historique
+- Alertes automatiques d'échec de sauvegarde
+- Métriques d'espace utilisé et tendances de croissance
+
+### API et hooks
+
+Le module expose les méthodes suivantes pour intégration :
+- `addWidget($widgetId, $config)` : Ajoute un widget au tableau de bord
+- `createNotification($type, $priority, $title, $message)` : Crée une notification
+- `getSystemStatus()` : Retourne l'état global du système
+
+## Exemple d'utilisation
+
+### Gestion des widgets
 
 ```php
-$config = [
-    // Rétention des notifications
-    'retention_days' => 30,
-    
-    // Limite par utilisateur
-    'max_notifications_per_user' => 100,
-    
-    // Types d'auto-notification
-    'auto_notify' => [
-        'system_errors' => true,
-        'security_alerts' => true,
-        'maintenance_tasks' => false,
-        'updates_available' => true
-    ],
-    
-    // Intégrations
-    'email_notifications' => true,
-    'webhook_url' => null,
-    'slack_integration' => false
+$dashboardManager = new DashboardManager();
+
+// Ajouter un widget personnalisé
+$widgetConfig = [
+    'title' => 'Statut des services',
+    'refresh_interval' => 30,
+    'show_graph' => true,
+    'services' => ['database', 'cache', 'storage']
 ];
+
+$dashboardManager->addWidget('system_services', $widgetConfig);
+
+// Configurer la position du widget
+$dashboardManager->setWidgetPosition('system_services', [
+    'x' => 0,
+    'y' => 0,
+    'width' => 6,
+    'height' => 4
+]);
 ```
 
-### Personnalisation interface
+### Création de notifications
 
-```css
-/* Styles personnalisés pour les notifications */
-.notification-critical {
-    border-left: 4px solid #dc3545;
-    background: #fff5f5;
-}
+```php
+// Notification critique système
+$dashboardManager->createNotification(
+    'system',
+    'critical',
+    'Espace disque critique',
+    'L\'espace disque disponible est inférieur à 5%. Action immédiate requise.',
+    '/bo/maintenance',
+    null,  // Tous les utilisateurs
+    date('Y-m-d H:i:s', strtotime('+24 hours'))  // Expire dans 24h
+);
 
-.notification-high {
-    border-left: 4px solid #fd7e14;
-    background: #fff8f0;
-}
+// Notification informative
+$dashboardManager->createNotification(
+    'info',
+    'medium',
+    'Sauvegarde terminée',
+    'La sauvegarde automatique s\'est terminée avec succès.',
+    '/bo/backup',
+    'admin',  // Utilisateur spécifique
+    null  // N'expire pas
+);
 ```
 
-## Performance
+### Développement de widgets personnalisés
 
-### Optimisations
-- Cache des notifications fréquentes
-- Pagination automatique
-- Compression des données
-- Lazy loading des détails
+```php
+// Créer un widget personnalisé
+class CustomSystemWidget extends BaseWidget {
+    public function getData() {
+        return [
+            'cpu_usage' => $this->getCpuUsage(),
+            'memory_usage' => $this->getMemoryUsage(),
+            'disk_usage' => $this->getDiskUsage(),
+            'active_sessions' => $this->getActiveSessions()
+        ];
+    }
+    
+    public function render() {
+        $data = $this->getData();
+        return $this->renderTemplate('custom_system_widget', $data);
+    }
+}
 
-### Monitoring
-- Temps de réponse des requêtes
-- Utilisation mémoire du widget
-- Fréquence de mise à jour
-- Taux d'interaction utilisateur
+// Enregistrer le widget
+$dashboardManager->registerWidget('custom_system', CustomSystemWidget::class);
+```
 
-## Sécurité
+### Surveillance système avancée
 
-- Validation des données de notification
-- Protection contre le spam
-- Limitation du taux de création
-- Audit des actions utilisateur
-- Chiffrement des données sensibles
+```php
+// Obtenir l'état global du système
+$systemStatus = $dashboardManager->getSystemStatus();
 
-## Dépannage
+echo "État général: " . $systemStatus['overall'] . "\n";
+echo "Services surveillés: " . count($systemStatus['services']) . "\n";
 
-### Problèmes courants
+foreach ($systemStatus['services'] as $service => $status) {
+    echo "- {$service}: " . $status['status'];
+    if ($status['status'] !== 'good') {
+        echo " (problème: " . $status['issue'] . ")";
+    }
+    echo "\n";
+}
 
-**Notifications non affichées**
-- Vérifier les permissions utilisateur
-- Contrôler la configuration du module
-- Vérifier la base de données
+// Métriques de performance
+$metrics = $dashboardManager->getPerformanceMetrics();
+echo "CPU: " . $metrics['cpu_usage'] . "%\n";
+echo "RAM: " . $metrics['memory_usage'] . "%\n";
+echo "Disque: " . $metrics['disk_usage'] . "%\n";
+```
 
-**Performance dégradée**
-- Nettoyer les anciennes notifications
-- Optimiser les requêtes de base
-- Ajuster la fréquence de refresh
+## Principes communs
 
-**Erreurs JavaScript**
-- Vérifier la compatibilité navigateur
-- Contrôler les conflits de scripts
-- Valider la syntaxe des templates
+### Sécurité
+- Protection CSRF sur toutes les actions de configuration de dashboard
+- Validation rigoureuse des données de widgets pour éviter injection
+- Contrôle d'accès granulaire selon permissions utilisateur
+- Sanitation de toutes les données affichées dans les notifications
+
+### Configuration
+- Tous les paramètres de dashboard stockés en base de données
+- Configuration modifiable via interface d'administration moderne
+- Sauvegarde automatique des personnalisations utilisateur
+- Validation en temps réel des paramètres avec retour immédiat
+
+### Extensibilité
+- Architecture modulaire permettant ajout facile de nouveaux widgets
+- Hooks disponibles pour extension de fonctionnalités par modules tiers
+- API standardisée pour intégration avec systèmes de monitoring externes
+- Support de plugins pour widgets et notifications personnalisés
+
+### Documentation
+- README complet avec guide de développement de widgets personnalisés
+- Commentaires détaillés dans le code pour toutes les fonctionnalités
+- Documentation API complète avec exemples de widgets
+- Guide de personnalisation et bonnes pratiques d'interface

@@ -1,196 +1,245 @@
-# Module SecurityManager - N3XT WEB
+# SecurityManager Module - N3XT WEB
 
 ## Vue d'ensemble
-Le module SecurityManager fournit des politiques de sécurité complètes, la détection de menaces et des mécanismes de protection pour le système N3XT WEB.
 
-## Widgets disponibles
+Le module SecurityManager fournit un système complet de sécurité et protection pour le système N3XT WEB. Il gère la détection des menaces en temps réel, la protection contre les attaques par force brute, et offre des mécanismes avancés de surveillance et d'audit de sécurité.
 
-### SecurityAlertsWidget
+## Fonctionnalités
 
-Widget principal qui affiche les alertes de sécurité et le statut de protection du système.
+### 🛡️ Protection contre les attaques par force brute
+- Blocage automatique des IP après tentatives de connexion échouées
+- Politique de verrouillage configurable avec durée personnalisable
+- Détection intelligente des patterns d'attaque suspects
+- System de whitelist pour IP de confiance avec gestion granulaire
 
-#### Fonctionnalités
-- **Alertes de sécurité** : Affichage des menaces et incidents en temps réel
-- **Statut de protection** : Vue d'ensemble de l'état de sécurité global
-- **Indicateurs de menace** : Métriques et analyses des risques
-- **Actions de sécurité** : Interface pour traiter les alertes
+### 🔐 Gestion avancée des mots de passe et sessions
+- Validation de la complexité des mots de passe avec règles configurables
+- Exigences de longueur minimale et caractères spéciaux
+- Gestion sécurisée des sessions avec timeout automatique
+- Génération de tokens sécurisés pour authentification renforcée
 
-#### Configuration
+### 📊 Monitoring et alertes de sécurité en temps réel
+- Surveillance continue des tentatives d'accès et activités suspectes
+- Système d'alertes multiniveaux (LOW, MEDIUM, HIGH, CRITICAL)
+- Tableau de bord avec métriques de sécurité en temps réel
+- Historique détaillé des événements de sécurité
 
-```php
-$config = [
-    'enabled' => true,
-    'title' => 'Alertes de sécurité',
-    'description' => 'Affiche les alertes de sécurité et le statut de protection du système',
-    'refresh_interval' => 60,
-    'max_alerts' => 10,
-    'show_resolved' => false,
-    'alert_levels' => ['critical', 'high', 'medium', 'low'],
-    'auto_scan_enabled' => true
-];
-```
-
-#### Utilisation
-
-```php
-// Instanciation du widget
-$widget = new SecurityAlertsWidget();
-
-// Récupération des données
-$data = $widget->getData();
-
-// Rendu HTML
-echo $widget->render();
-```
-
-## Fonctionnalités principales
-- **Protection de connexion** : Protection contre la force brute et blocage d'IP
-- **Sécurité des mots de passe** : Validation de la force et exigences de complexité
-- **Gestion de session** : Gestion sécurisée des sessions avec contrôles de timeout
-- **Gestion IP** : Fonctionnalité de liste blanche/noire
-- **Scan de sécurité** : Évaluation automatisée de la sécurité
-- **Détection de menaces** : Surveillance du niveau de menace en temps réel
-- **Audit des logs** : Journalisation complète des événements de sécurité
-- **Authentification à deux facteurs** : Sécurité d'authentification renforcée (configurable)
+### 🚫 Gestion intelligente des listes blanches/noires d'IP
+- Système de blacklist automatique basé sur le comportement
+- Whitelist pour adresses IP de confiance avec priorité absolue
+- Gestion dynamique des règles selon contexte de menace
+- Interface d'administration pour gestion manuelle des listes
 
 ## Configuration
-Module configuration is stored in the `{prefix}security_config` table:
 
-| Setting | Default | Description |
-|---------|---------|-------------|
-| `security_login_attempts_max` | 5 | Maximum login attempts before lockout |
-| `security_lockout_duration` | 900 | Lockout duration in seconds |
-| `security_session_timeout` | 3600 | Session timeout in seconds |
-| `security_password_min_length` | 8 | Minimum password length |
-| `security_password_complexity` | 1 | Require complex passwords |
-| `security_ip_whitelist` | '' | Comma-separated IP whitelist |
-| `security_ip_blacklist` | '' | Comma-separated IP blacklist |
-| `security_captcha_enabled` | 0 | Enable CAPTCHA protection |
-| `security_two_factor_enabled` | 0 | Enable two-factor authentication |
-| `security_audit_logging` | 1 | Enable security audit logging |
+### Paramètres disponibles
 
-## Security Threat Levels
-- `LOW` - Normal security state
-- `MEDIUM` - Increased caution required
-- `HIGH` - Active security concerns
-- `CRITICAL` - Immediate security action required
+| Paramètre | Description | Valeur par défaut |
+|-----------|-------------|-------------------|
+| `enabled` | Active/désactive le module | `true` |
+| `login_attempts_max` | Tentatives max avant blocage | `5` |
+| `lockout_duration` | Durée de blocage (secondes) | `900` (15min) |
+| `session_timeout` | Timeout de session (secondes) | `3600` (1h) |
+| `password_min_length` | Longueur minimale mot de passe | `8` |
+| `password_complexity` | Exigence de complexité | `true` |
+| `captcha_enabled` | Protection CAPTCHA | `false` |
+| `two_factor_enabled` | Authentification à deux facteurs | `false` |
 
-## Security Events
-- `login_success` - Successful authentication
-- `login_failed` - Failed authentication attempt
-- `login_blocked` - Login attempt from blocked IP
-- `ip_blocked` - IP address blocked due to suspicious activity
-- `suspicious_activity` - Unusual behavior detected
-- `bruteforce_attempt` - Brute force attack detected
-- `security_scan` - Security scan performed
+### Configuration via interface admin
 
-## Usage
-
-### Check IP Status
 ```php
+// Accès au module
 $securityManager = SecurityManager::getInstance();
 
-// Check if IP is blocked
-if ($securityManager->isIPBlocked($ip)) {
-    // Handle blocked IP
-}
-
-// Check if IP is whitelisted
-if ($securityManager->isIPWhitelisted($ip)) {
-    // Allow access
-}
+// Modifier la configuration
+$securityManager->setConfig('login_attempts_max', 3);
+$securityManager->setConfig('lockout_duration', 1800); // 30 minutes
 ```
 
-### Record Login Attempts
-```php
-$securityManager->recordLoginAttempt(
-    $ip,
-    $username,
-    $success,
-    $failureReason
+## Administration
+
+**Interface disponible :** `/bo/security.php`
+
+### Tableau de bord
+- Niveau de menace actuel du système avec indicateurs visuels
+- Statistiques des tentatives de connexion et blocages récents
+- Liste des dernières alertes de sécurité avec actions possibles
+- Monitoring en temps réel des IP bloquées et whitelistées
+
+### Actions disponibles
+- Gestion manuelle des listes blanches et noires d'IP
+- Configuration des politiques de sécurité et seuils d'alerte
+- Consultation des logs d'audit avec filtres avancés
+- Déclenchement de scans de sécurité manuels complets
+
+## Schema de base de données
+
+### Table `login_attempts`
+
+```sql
+CREATE TABLE n3xt_login_attempts (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    ip_address VARCHAR(45) NOT NULL,
+    username VARCHAR(50) NULL,
+    success BOOLEAN NOT NULL,
+    failure_reason VARCHAR(100) NULL,
+    user_agent TEXT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_ip_created (ip_address, created_at),
+    INDEX idx_username_created (username, created_at)
 );
 ```
 
-### Validate Password Strength
+### Table `security_events`
+
+```sql
+CREATE TABLE n3xt_security_events (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    event_type ENUM('login_success', 'login_failed', 'ip_blocked', 'suspicious_activity', 'bruteforce_attempt', 'security_scan') NOT NULL,
+    threat_level ENUM('LOW', 'MEDIUM', 'HIGH', 'CRITICAL') DEFAULT 'LOW',
+    ip_address VARCHAR(45) NULL,
+    username VARCHAR(50) NULL,
+    description TEXT NOT NULL,
+    metadata JSON NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+```
+
+## Intégration
+
+### Avec les autres modules
+
+**EventManager :** Journalisation centralisée des événements de sécurité
+- Enregistrement de tous les événements de sécurité avec contexte
+- Rotation automatique des logs de sécurité selon politique
+- Intégration dans le système global d'audit et monitoring
+
+**NotificationManager :** Alertes automatiques de sécurité
+- Notifications en temps réel des menaces critiques détectées
+- Alertes email pour tentatives d'accès suspect ou blocages
+- Rapports périodiques de sécurité avec statistiques
+
+**LoginSystem :** Protection de l'authentification
+- Intégration transparente avec système de connexion existant
+- Validation automatique des tentatives de connexion
+- Protection CSRF et contrôles de session renforcés
+
+### API et hooks
+
+Le module expose les méthodes suivantes pour intégration :
+- `isIPBlocked($ip)` : Vérifie si une IP est bloquée
+- `recordLoginAttempt($ip, $username, $success, $reason)` : Enregistre tentative
+- `performSecurityScan()` : Lance un scan de sécurité complet
+
+## Exemple d'utilisation
+
+### Vérification du statut d'une IP
+
 ```php
-$validation = $securityManager->validatePasswordStrength($password);
-if (!$validation['valid']) {
-    foreach ($validation['errors'] as $error) {
-        echo $error . "\n";
+$securityManager = SecurityManager::getInstance();
+
+// Vérifier si IP est bloquée
+$clientIP = $_SERVER['REMOTE_ADDR'];
+if ($securityManager->isIPBlocked($clientIP)) {
+    // Bloquer l'accès et enregistrer l'événement
+    $securityManager->logSecurityEvent(
+        'ip_blocked', 
+        'HIGH', 
+        $clientIP, 
+        'Tentative d\'accès depuis IP bloquée'
+    );
+    die('Accès refusé');
+}
+
+// Vérifier si IP est en whitelist
+if ($securityManager->isIPWhitelisted($clientIP)) {
+    // Autoriser l'accès prioritaire
+    echo "Accès autorisé - IP de confiance";
+}
+```
+
+### Gestion des tentatives de connexion
+
+```php
+// Enregistrer une tentative de connexion
+$loginSuccess = false; // Résultat de l'authentification
+$username = $_POST['username'];
+$ip = $_SERVER['REMOTE_ADDR'];
+
+$securityManager->recordLoginAttempt(
+    $ip,
+    $username,
+    $loginSuccess,
+    $loginSuccess ? null : 'Mot de passe incorrect'
+);
+
+// Vérifier si l'IP doit être bloquée
+if (!$loginSuccess) {
+    $attemptsCount = $securityManager->getFailedAttempts($ip, 3600); // 1 heure
+    if ($attemptsCount >= $securityManager->getConfig('login_attempts_max')) {
+        $securityManager->blockIP($ip, 'Trop de tentatives échouées');
     }
 }
 ```
 
-### Security Scanning
+### Validation de la sécurité des mots de passe
+
 ```php
+$password = $_POST['new_password'];
+$validation = $securityManager->validatePasswordStrength($password);
+
+if (!$validation['valid']) {
+    foreach ($validation['errors'] as $error) {
+        echo "Erreur: " . $error . "\n";
+    }
+    // Exemple d'erreurs:
+    // - "Le mot de passe doit contenir au moins 8 caractères"
+    // - "Le mot de passe doit contenir au moins une majuscule"
+    // - "Le mot de passe doit contenir au moins un chiffre"
+} else {
+    echo "Mot de passe accepté - Force: " . $validation['strength'] . "/100\n";
+}
+```
+
+### Scan de sécurité complet
+
+```php
+// Exécuter un scan de sécurité
 $scanResults = $securityManager->performSecurityScan();
-echo "Threat Level: " . $scanResults['threat_level'];
-echo "Issues: " . implode(', ', $scanResults['issues']);
+
+echo "Niveau de menace global: " . $scanResults['threat_level'] . "\n";
+echo "Problèmes détectés: " . count($scanResults['issues']) . "\n";
+
+foreach ($scanResults['issues'] as $issue) {
+    echo "- {$issue['type']}: {$issue['description']}\n";
+    if ($issue['severity'] === 'CRITICAL') {
+        echo "  ⚠️  ACTION IMMÉDIATE REQUISE\n";
+    }
+}
 ```
 
-### Session Management
-```php
-// Generate secure token
-$token = $securityManager->generateSecureToken();
+## Principes communs
 
-// Check session validity
-$isValid = $securityManager->isSessionValid($sessionStart);
-```
+### Sécurité
+- Protection CSRF sur toutes les actions de configuration de sécurité
+- Validation rigoureuse de toutes les entrées utilisateur
+- Chiffrement des données sensibles en base de données
+- Audit trail complet de toutes les modifications de sécurité
 
-### Input Sanitization
-```php
-$cleanInput = $securityManager->sanitizeInput($_POST['data']);
-```
+### Configuration
+- Tous les paramètres de sécurité stockés en base de données chiffrée
+- Configuration modifiable uniquement par super-administrateurs
+- Valeurs par défaut sécurisées suivant les meilleures pratiques
+- Validation en temps réel des paramètres avec feedback immédiat
 
-## Database Schema
-The module uses the following tables:
-- `{prefix}login_attempts` - Login attempt tracking
-- `{prefix}security_config` - Module configuration
+### Extensibilité
+- Architecture modulaire permettant ajout de nouvelles règles de sécurité
+- Hooks disponibles pour intégration avec systèmes de sécurité externes
+- API standardisée pour monitoring et alertes
+- Support de plugins pour détection de menaces personnalisées
 
-## Security Features
-
-### Brute Force Protection
-- Automatic IP blocking after configured failed attempts
-- Configurable lockout duration
-- Real-time threat assessment
-
-### Password Security
-- Configurable minimum length requirements
-- Optional complexity requirements (uppercase, lowercase, numbers, special characters)
-- Password strength validation
-
-### Session Security
-- Configurable session timeouts
-- Secure token generation
-- Session validity checking
-
-### IP Management
-- IP whitelist for trusted addresses
-- IP blacklist for known threats
-- Dynamic IP blocking based on behavior
-
-### Security Monitoring
-- Real-time security scanning
-- Threat level assessment
-- Security recommendations
-- Audit trail logging
-
-## Integration
-The SecurityManager integrates with:
-- EventManager (security event logging)
-- Login system (authentication protection)
-- Session management (security controls)
-
-## Administration
-Security management is available through the back office at `/bo/security.php` (when implemented).
-
-## Best Practices
-1. Regularly review blocked IPs
-2. Monitor security scan results
-3. Update security configurations based on threat landscape
-4. Enable two-factor authentication for enhanced security
-5. Regularly review audit logs
-6. Keep IP whitelists and blacklists updated
-
-## Migration
-Module migrations are tracked in the `{prefix}module_migrations` table.
+### Documentation
+- README complet avec exemples de configuration de sécurité
+- Commentaires détaillés dans le code pour toutes les fonctions critiques
+- Documentation API complète avec codes de retour de sécurité
+- Guide de réponse aux incidents et procédures d'urgence
