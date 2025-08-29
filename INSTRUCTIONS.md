@@ -124,9 +124,24 @@ La gestion des langues est extensible (JSON par langue, centralisé dans `/lang/
 ## 7. Fonctionnalités principales
 
 1. **Installation**
-   - Génération dossier Back office aléatoire
-   - Envoi identifiants Back office par mail
-   - Vérification prérequis système et BDD
+   - **Étape 1** : Sélection de la langue (français par défaut, anglais disponible)
+   - **Étape 2** : Vérification des prérequis système (PHP, extensions, permissions)
+   - **Étape 3** : Collecte centralisée des informations administrateur :
+     - Email (vérification par code à 6 chiffres)
+     - Login administrateur
+     - Prénom et nom de famille
+     - Validation des formats et longueurs
+   - **Étape 4** : Configuration base de données (valeurs par défaut pré-remplies) :
+     - Hôte : nxtxyzylie618.mysql.db
+     - Base : nxtxyzylie618
+     - Utilisateur : nxtxyzylie618
+     - Mot de passe : (vide)
+     - Préfixe : n3xtweb_
+   - **Étape 5** : Résumé et finalisation de l'installation
+   - **Étape 6** : Confirmation d'installation, génération dossier Back office aléatoire
+   - Envoi identifiants Back office par mail avec personnalisation (nom/prénom)
+   - Application de la langue choisie comme défaut système et compte admin
+   - Suppression automatique d'install.php et fichiers temporaires
 
 2. **Authentification & Sécurité**
    - Login Back office : captcha, tentatives limitées, blocage IP

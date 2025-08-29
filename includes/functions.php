@@ -1339,14 +1339,17 @@ class EmailHelper {
     /**
      * Send admin credentials email
      */
-    public static function sendAdminCredentials($email, $username, $password, $boDirectory, $language = 'fr') {
+    public static function sendAdminCredentials($email, $username, $password, $boDirectory, $language = 'fr', $firstName = '', $lastName = '') {
         $adminUrl = 'https://' . $_SERVER['HTTP_HOST'] . '/' . $boDirectory . '/login.php';
+        
+        $fullName = trim($firstName . ' ' . $lastName);
+        $personalGreeting = $fullName ? $fullName : $username;
         
         $templates = [
             'fr' => [
                 'subject' => 'N3XT WEB - Vos identifiants administrateur',
                 'title' => 'Installation terminée avec succès',
-                'greeting' => 'Félicitations ! N3XT WEB a été installé avec succès.',
+                'greeting' => "Félicitations {$personalGreeting} ! N3XT WEB a été installé avec succès.",
                 'credentials_title' => 'Vos identifiants administrateur :',
                 'username_label' => 'Nom d\'utilisateur',
                 'password_label' => 'Mot de passe',
@@ -1357,13 +1360,13 @@ class EmailHelper {
             'en' => [
                 'subject' => 'N3XT WEB - Your Administrator Credentials',
                 'title' => 'Installation completed successfully',
-                'greeting' => 'Congratulations! N3XT WEB has been installed successfully.',
+                'greeting' => "Congratulations {$personalGreeting}! N3XT WEB has been installed successfully.",
                 'credentials_title' => 'Your administrator credentials:',
                 'username_label' => 'Username',
                 'password_label' => 'Password',
                 'admin_panel_label' => 'Admin Panel',
-                'security_note' => 'For security, please change this password on your first login.',
-                'footer' => 'Keep this information secure.'
+                'security_note' => 'For your security, please change this password on your first login.',
+                'footer' => 'Keep this information in a safe place.'
             ]
         ];
         
@@ -1725,6 +1728,15 @@ class LanguageHelper {
             'send_code' => 'Envoyer le code',
             'verify_code' => 'Vérifier le code',
             'admin_username' => 'Nom d\'utilisateur administrateur',
+            'first_name' => 'Prénom',
+            'last_name' => 'Nom de famille',
+            'admin_info_title' => 'Informations administrateur',
+            'admin_info_subtitle' => 'Veuillez fournir les informations de l\'administrateur principal',
+            'email_help' => 'Cette adresse recevra le code de vérification et les identifiants',
+            'login_help' => 'Nom d\'utilisateur pour se connecter au panneau d\'administration',
+            'first_name_help' => 'Prénom de l\'administrateur',
+            'last_name_help' => 'Nom de famille de l\'administrateur',
+            'verify_and_continue' => 'Vérifier l\'email et continuer',
             'table_prefix' => 'Préfixe des tables',
             'table_prefix_help' => 'Préfixe pour les tables de la base de données (optionnel)',
             'email_sent' => 'Un code de vérification a été envoyé à votre adresse email.',
@@ -1754,6 +1766,15 @@ class LanguageHelper {
             'send_code' => 'Send Code',
             'verify_code' => 'Verify Code',
             'admin_username' => 'Administrator Username',
+            'first_name' => 'First Name',
+            'last_name' => 'Last Name',
+            'admin_info_title' => 'Administrator Information',
+            'admin_info_subtitle' => 'Please provide the main administrator information',
+            'email_help' => 'This address will receive the verification code and credentials',
+            'login_help' => 'Username to login to the administration panel',
+            'first_name_help' => 'Administrator\'s first name',
+            'last_name_help' => 'Administrator\'s last name',
+            'verify_and_continue' => 'Verify email and continue',
             'table_prefix' => 'Table Prefix',
             'table_prefix_help' => 'Prefix for database tables (optional)',
             'email_sent' => 'A verification code has been sent to your email address.',
