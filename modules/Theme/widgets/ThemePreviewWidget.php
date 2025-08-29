@@ -11,7 +11,7 @@ if (!defined('IN_N3XTWEB')) {
 }
 
 // Charger la classe de base
-require_once __DIR__ . '/../BaseWidget.php';
+require_once __DIR__ . '/../../BaseWidget.php';
 
 class ThemePreviewWidget extends BaseWidget {
     
