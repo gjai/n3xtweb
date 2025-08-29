@@ -486,6 +486,11 @@ if (file_exists($accessLogFile)) {
                         </a>
                     </li>
                     <li class="nav-item">
+                        <a href="?page=modules" class="nav-link <?php echo $currentPage === 'modules' ? 'active' : ''; ?>">
+                            🎛️ Modules Back Office
+                        </a>
+                    </li>
+                    <li class="nav-item">
                         <a href="../security_scanner.php" class="nav-link" target="_blank">
                             🔒 Scanner sécurité
                         </a>
@@ -1766,6 +1771,32 @@ if (file_exists($accessLogFile)) {
                         }
                     }
                     </style>
+                    
+                <?php elseif ($currentPage === 'modules'): ?>
+                    <!-- Modules Dashboard -->
+                    <?php 
+                    // Check if modules are available
+                    if (class_exists('ModulesLoader')) {
+                        // Include the dashboard
+                        include_once dirname(__DIR__) . '/modules/dashboard.php';
+                        
+                        // Include all module views
+                        $moduleViews = [
+                            'UpdateManager' => dirname(__DIR__) . '/modules/UpdateManager/views/admin.php',
+                            'NotificationManager' => dirname(__DIR__) . '/modules/NotificationManager/views/admin.php',
+                            'BackupManager' => dirname(__DIR__) . '/modules/BackupManager/views/admin.php',
+                            'MaintenanceManager' => dirname(__DIR__) . '/modules/MaintenanceManager/views/admin.php'
+                        ];
+                        
+                        foreach ($moduleViews as $moduleName => $viewPath) {
+                            if (file_exists($viewPath)) {
+                                include_once $viewPath;
+                            }
+                        }
+                    } else {
+                        echo '<div class="alert alert-warning">Les modules Back Office ne sont pas disponibles. Vérifiez l\'installation.</div>';
+                    }
+                    ?>
                     
                 <?php endif; ?>
             </div>
