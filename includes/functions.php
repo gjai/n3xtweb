@@ -47,8 +47,8 @@ class Database {
             
             $this->pdo = new PDO($dsn, DB_USER, DB_PASS, $options);
             
-            // Set SQL mode for stricter operation
-            $this->pdo->exec("SET sql_mode = 'STRICT_TRANS_TABLES,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION'");
+            // Set SQL mode for stricter operation (NO_AUTO_CREATE_USER removed for MySQL 8.0+ compatibility)
+            $this->pdo->exec("SET sql_mode = 'STRICT_TRANS_TABLES,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION'");
             
         } catch (PDOException $e) {
             // Don't expose database details in production
