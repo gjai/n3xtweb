@@ -49,9 +49,17 @@ class GitHubUpdater {
     }
     
     /**
-     * Get latest release information
+     * Get latest release information with caching
      */
     public function getLatestRelease() {
+        $cacheKey = "github_release_{$this->owner}_{$this->repo}";
+        
+        // Try to get cached data first
+        $cachedData = Cache::get($cacheKey);
+        if ($cachedData !== null) {
+            return $cachedData;
+        }
+        
         $url = "{$this->apiUrl}/repos/{$this->owner}/{$this->repo}/releases/latest";
         
         $context = stream_context_create([
@@ -70,6 +78,12 @@ class GitHubUpdater {
         
         if ($response === false) {
             $error = error_get_last();
+            // Check if we have cached data to fall back to
+            $fallbackData = Cache::get($cacheKey . '_fallback');
+            if ($fallbackData !== null) {
+                Logger::log("GitHub API error, using cached fallback data: " . ($error['message'] ?? 'Erreur réseau'), LOG_LEVEL_WARNING, 'update');
+                return $fallbackData;
+            }
             throw new Exception('Impossible de récupérer les informations de version depuis GitHub: ' . ($error['message'] ?? 'Erreur réseau'));
         }
         
@@ -78,7 +92,13 @@ class GitHubUpdater {
             $status_line = $http_response_header[0];
             if (strpos($status_line, '200') === false) {
                 // Handle rate limiting more gracefully
-                if (strpos($status_line, '403') !== false && strpos($status_line, 'rate limit') !== false) {
+                if (strpos($status_line, '403') !== false && (strpos($status_line, 'rate limit') !== false || strpos($status_line, 'API rate limit') !== false)) {
+                    // Check if we have cached data to fall back to
+                    $fallbackData = Cache::get($cacheKey . '_fallback');
+                    if ($fallbackData !== null) {
+                        Logger::log("GitHub rate limit reached, using cached data", LOG_LEVEL_WARNING, 'update');
+                        return $fallbackData;
+                    }
                     throw new Exception('Limite de débit GitHub atteinte. Veuillez réessayer dans quelques minutes. Les vérifications automatiques de mise à jour sont temporairement suspendues.');
                 }
                 throw new Exception('Erreur HTTP lors de la récupération des données GitHub: ' . $status_line);
@@ -89,6 +109,11 @@ class GitHubUpdater {
         if (json_last_error() !== JSON_ERROR_NONE) {
             throw new Exception('Réponse JSON invalide de GitHub: ' . json_last_error_msg());
         }
+        
+        // Cache the successful response for 30 minutes
+        Cache::set($cacheKey, $data, 1800);
+        // Also store as fallback cache for 24 hours
+        Cache::set($cacheKey . '_fallback', $data, 86400);
         
         return $data;
     }
@@ -118,6 +143,32 @@ class GitHubUpdater {
         }
         
         return filesize($targetPath);
+    }
+    
+    /**
+     * Clear cached release information (useful for testing or forcing refresh)
+     */
+    public function clearReleaseCache() {
+        $cacheKey = "github_release_{$this->owner}_{$this->repo}";
+        $cacheDir = ROOT_PATH . '/cache';
+        
+        if (!is_dir($cacheDir)) {
+            return false;
+        }
+        
+        $cacheFiles = [
+            $cacheDir . '/' . hash('sha256', $cacheKey) . '.cache',
+            $cacheDir . '/' . hash('sha256', $cacheKey . '_fallback') . '.cache'
+        ];
+        
+        $cleared = 0;
+        foreach ($cacheFiles as $file) {
+            if (file_exists($file) && unlink($file)) {
+                $cleared++;
+            }
+        }
+        
+        return $cleared > 0;
     }
 }
 
@@ -428,20 +479,41 @@ try {
         switch ($action) {
             case 'check_update':
                 $updater = new GitHubUpdater();
+                
+                // Check if we're using cached data
+                $cacheKey = "github_release_" . GITHUB_OWNER . "_" . GITHUB_REPO;
+                $usingCache = Cache::get($cacheKey) !== null;
+                
                 $release = $updater->getLatestRelease();
                 
                 $currentVersion = SYSTEM_VERSION;
                 $latestVersion = ltrim($release['tag_name'], 'v');
                 
-                Logger::logUpdate("Checked for updates - Current: {$currentVersion}, Latest: {$latestVersion}");
+                Logger::logUpdate("Checked for updates - Current: {$currentVersion}, Latest: {$latestVersion}" . ($usingCache ? " (cached)" : ""));
                 
                 if (version_compare($currentVersion, $latestVersion, '<')) {
-                    $message = "Update available! Current version: {$currentVersion}, Latest version: {$latestVersion}";
+                    $cacheNote = $usingCache ? " (informations mises en cache pour éviter les limites de débit)" : "";
+                    $message = "Update available! Current version: {$currentVersion}, Latest version: {$latestVersion}{$cacheNote}";
                     $messageType = 'info';
                     $_SESSION['update_info'] = $release;
                 } else {
-                    $message = "System is up to date. Current version: {$currentVersion}";
+                    $cacheNote = $usingCache ? " (informations mises en cache)" : "";
+                    $message = "System is up to date. Current version: {$currentVersion}{$cacheNote}";
                     $messageType = 'success';
+                }
+                break;
+                
+            case 'clear_cache':
+                $updater = new GitHubUpdater();
+                $cleared = $updater->clearReleaseCache();
+                
+                if ($cleared) {
+                    $message = "Cache des informations de mise à jour vidé avec succès.";
+                    $messageType = 'success';
+                    Logger::logUpdate("GitHub release cache cleared manually");
+                } else {
+                    $message = "Aucune donnée en cache à supprimer.";
+                    $messageType = 'info';
                 }
                 break;
                 
@@ -669,6 +741,15 @@ function deleteDirectory($dir) {
                                     <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrfToken); ?>">
                                     <input type="hidden" name="action" value="check_update">
                                     <button type="submit" class="btn btn-primary">Check for Updates</button>
+                                </form>
+                                
+                                <form method="POST" style="display: inline; margin-left: 10px;">
+                                    <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrfToken); ?>">
+                                    <input type="hidden" name="action" value="clear_cache">
+                                    <button type="submit" class="btn btn-secondary" style="font-size: 12px; padding: 4px 8px;" 
+                                            title="Vider le cache pour forcer une nouvelle vérification">
+                                        🗑️ Clear Cache
+                                    </button>
                                 </form>
                                 
                                 <?php if (isset($_SESSION['update_info'])): ?>
