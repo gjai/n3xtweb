@@ -2291,6 +2291,18 @@ if (defined('ENABLE_SECURITY_HEADERS') && ENABLE_SECURITY_HEADERS) {
     Security::setSecurityHeaders();
 }
 
+// Load modules if available
+if (file_exists(dirname(__DIR__) . '/modules/loader.php')) {
+    require_once dirname(__DIR__) . '/modules/loader.php';
+    
+    // Apply module migration if needed
+    try {
+        ModulesLoader::migrate();
+    } catch (Exception $e) {
+        error_log("Modules migration failed: " . $e->getMessage());
+    }
+}
+
 // Start session (only if config exists)
 if (file_exists(dirname(__DIR__) . '/config/config.php')) {
     Session::start();
