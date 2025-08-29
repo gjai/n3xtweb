@@ -9,7 +9,7 @@
 // Define security constant before including any files
 define('IN_N3XTWEB', true);
 
-require_once '../includes/functions.php';
+require_once dirname(__DIR__) . '/includes/functions.php';
 
 // Check authentication
 if (!Session::isLoggedIn()) {

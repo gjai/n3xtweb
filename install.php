@@ -160,6 +160,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $configContent = generateConfigFile($dbConfig, $boDirectory);
                     file_put_contents('config/config.php', $configContent);
                     
+                    // Create installation marker
+                    file_put_contents('config/.installed', date('Y-m-d H:i:s'));
+                    
                     // Create BO directory
                     if (InstallHelper::createBoDirectory($boDirectory)) {
                         // Clean up installation directories
@@ -204,16 +207,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
  * Generate configuration file content
  */
 function generateConfigFile($dbConfig, $boDirectory) {
-    $template = file_get_contents('config/config.php');
+    $template = file_get_contents('config/config.template.php');
     
     $replacements = [
-        "'nxtxyzylie618.mysql.db'" => "'{$dbConfig['host']}'",
-        "'nxtxyzylie618_db'" => "'{$dbConfig['name']}'",
-        "'nxtxyzylie618_user'" => "'{$dbConfig['user']}'", 
-        "'secure_password'" => "'{$dbConfig['pass']}'",
-        "'n3xtweb_'" => "'{$dbConfig['prefix']}'",
-        // Maintenance mode disabled by default after installation
-        "define('ADMIN_PATH', ROOT_PATH . '/admin');" => "define('ADMIN_PATH', ROOT_PATH . '/{$boDirectory}');"
+        '{{DB_HOST}}' => $dbConfig['host'],
+        '{{DB_NAME}}' => $dbConfig['name'],
+        '{{DB_USER}}' => $dbConfig['user'],
+        '{{DB_PASS}}' => $dbConfig['pass'],
+        '{{TABLE_PREFIX}}' => $dbConfig['prefix'],
+        '{{ADMIN_DIRECTORY}}' => $boDirectory
     ];
     
     return str_replace(array_keys($replacements), array_values($replacements), $template);
