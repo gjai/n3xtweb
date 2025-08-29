@@ -27,6 +27,13 @@ if (file_exists($configPath)) {
 }
 require_once dirname(__DIR__) . '/includes/Configuration.php';
 
+// Define essential path constants as fallbacks if not already defined
+// These are needed for basic operations like logging during installation
+if (!defined('ROOT_PATH')) define('ROOT_PATH', dirname(__DIR__));
+if (!defined('LOG_PATH')) define('LOG_PATH', ROOT_PATH . '/logs');
+if (!defined('BACKUP_PATH')) define('BACKUP_PATH', ROOT_PATH . '/backups');
+if (!defined('UPLOAD_PATH')) define('UPLOAD_PATH', ROOT_PATH . '/uploads');
+
 /**
  * Database connection using PDO with prepared statements
  */
