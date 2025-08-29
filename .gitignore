@@ -43,3 +43,36 @@ sessions/*
 # Cache files
 cache/*
 !cache/.gitkeep
+
+# Build artifacts
+dist/
+build/
+node_modules/
+
+# Module-specific ignores
+modules/*/cache/
+modules/*/tmp/
+modules/*/logs/
+
+# Database dumps from development
+*.sql
+backup_*.sql
+
+# Installation artifacts
+install_*.log
+installation_backup/
+
+# PHP-specific
+vendor/
+composer.lock
+
+# Environment-specific files
+.env
+.env.local
+.env.production
+
+# Development files
+debug.log
+error.log
+*.debug
+*.trace

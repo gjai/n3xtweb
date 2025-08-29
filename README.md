@@ -1,31 +1,48 @@
 # N3XT WEB
 
-A powerful, secure, and responsive web content management system with advanced back office capabilities, automated updates, and comprehensive backup solutions.
+A powerful, secure, and modular web content management system with advanced back office capabilities, automated updates, and comprehensive backup solutions.
 
 **Publisher:** N3XT Communication  
 **Authors:** Julien Gauthier & Copilot  
-**Version:** 2.4.0
+**Version:** 2.5.0
 
-## 🚀 Features
+## 🏗️ Modular Architecture
+
+N3XT WEB features a modular architecture designed for clean installation, scalability, and maintainability:
+
+### Core Modules
+- **[EventManager](modules/EventManager/README.md)** - System event logging and monitoring
+- **[SecurityManager](modules/SecurityManager/README.md)** - Security policies and threat detection  
+- **[BackupManager](modules/BackupManager/README.md)** - Backup and restore operations
+- **[UpdateManager](modules/UpdateManager/README.md)** - System updates and version management
+- **[NotificationManager](modules/NotificationManager/README.md)** - Email notifications and messaging
+- **[MaintenanceManager](modules/MaintenanceManager/README.md)** - Automated system maintenance
+
+### Module Features
+- **Independent Configuration** - Each module has its own configuration table
+- **Database-Driven Settings** - No hardcoded configuration files
+- **Migration Support** - Tracked module migrations for seamless updates
+- **Admin Interfaces** - Dedicated management interfaces for each module
+- **Event Integration** - Cross-module communication via EventManager
+- **Security Integration** - All modules integrate with SecurityManager
+
+## 🚀 Key Features
 
 ### 🔐 Enhanced Security
 - Multi-layer authentication with configurable captcha protection
-- Configurable rate limiting and IP blocking (disabled by default)
 - Comprehensive database-based access logging and audit trails
 - PDO prepared statements to prevent SQL injection
 - Security headers and CSRF token protection
 - Dynamic security settings configurable from Back Office
-- **Automatic installation cleanup** - Removes security decoys and temporary directories
-- **Database connection diagnostics** - Clear error messages and connection testing
+- Automatic installation cleanup and security hardening
 
 ### 🔄 Automated Updates
-- **GitHub integration** for downloading latest releases
-- **ZIP upload system** - Upload update packages directly through back office (max 50MB)
-- **Dual-source update workflow** - Choose between GitHub or ZIP upload methods
+- GitHub integration for downloading latest releases
+- ZIP upload system for manual updates (max 50MB)
 - Automatic backup creation before updates
 - File integrity checking and unexpected file scanning
 - Safe core replacement excluding critical directories
-- Comprehensive update logging
+- Comprehensive update logging and rollback capability
 
 ### 💾 Backup & Restore
 - Complete system backup including database and files
@@ -40,21 +57,6 @@ A powerful, secure, and responsive web content management system with advanced b
 - Touch-friendly controls and interactions
 - Progressive enhancement for desktop users
 
-### 📊 Comprehensive Logging
-- Database-based access attempt logging with IP tracking
-- File-based logging as fallback for system reliability
-- Update activity monitoring
-- System error tracking with detailed diagnostics
-- Configurable log levels
-- Real-time log viewing in admin panel with database connection testing
-
-### 🔧 System Maintenance
-- **Comprehensive maintenance interface** accessible from back office
-- **Quick actions** - Cache clearing, log cleanup, temp file cleanup, database optimization
-- **Health checks** - System performance and integrity monitoring
-- **Automated maintenance** via cron job support
-- **System information** dashboard with resource usage monitoring
-
 ## 📋 System Requirements
 
 - **PHP**: 7.4 or higher (8.2+ recommended for OVH)
@@ -64,389 +66,255 @@ A powerful, secure, and responsive web content management system with advanced b
 - **Disk Space**: Minimum 100MB for installation
 
 ### ✅ OVH Shared Hosting Compatibility
-- **Fully tested** on OVH shared hosting (mutualisé)
-- **Optimized** `.htaccess` without LocationMatch directives
-- **Automatic** PHP version control via `.ovhconfig`
-- **Enhanced** security for shared environments
-- **Performance** optimized for shared hosting resources
+- Fully tested on OVH shared hosting (mutualisé)
+- Optimized `.htaccess` without LocationMatch directives
+- Automatic PHP version control via `.ovhconfig`
+- Enhanced security for shared environments
+- Performance optimized for shared hosting resources
 
-## 🛠️ Installation
+## 🛠️ Clean Server Installation
 
-### Standard Installation
+### Prerequisites
+- Fresh server environment (VPS or shared hosting)
+- PHP 7.4+ with required extensions
+- MySQL/MariaDB database
+- Web server (Apache/Nginx) with URL rewriting
 
-1. **Download and Extract**
-   ```bash
-   # Download the latest release
-   wget https://github.com/gjai/n3xtweb/archive/main.zip
-   unzip main.zip
-   mv n3xtweb-main/* /path/to/your/webroot/
-   ```
+### Installation Steps
 
-2. **Set Permissions**
-   ```bash
-   chmod 755 -R /path/to/your/webroot/
-   chmod 777 config/ logs/ backups/ uploads/
-   ```
-
-3. **Run Installation**
-   - Navigate to `http://yourdomain.com/install.php`
-   - Follow the step-by-step installation wizard
-   - Configure database settings
-   - Create admin account
-   - **Installation automatically cleans up unnecessary directories**
-
-4. **Security Setup** (Important!)
-   - Remove or restrict access to `install.php` (auto-removal attempted)
-   - Verify `.htaccess` configuration
-   - Enable HTTPS if possible
-   - Review security settings
-   - **Fake `/admin` directory and original `/bo` directory are automatically removed**
-
-### 🏢 OVH Shared Hosting Installation
-
-N3XT WEB is fully optimized for **OVH shared hosting (mutualisé)** with special configurations for maximum compatibility and security.
-
-#### Prerequisites for OVH
-- OVH shared hosting plan with PHP 8.0+ support
-- MySQL database (available in OVH control panel)
-- FTP/SFTP access to your hosting space
-- Access to OVH control panel for database management
-
-#### Step-by-Step OVH Installation
-
-1. **Prepare Your OVH Environment**
-   ```
-   ✓ Log in to OVH control panel
-   ✓ Create a MySQL database and note the credentials
-   ✓ Access your hosting via FTP/SFTP
-   ```
-
-2. **Download and Upload Files**
-   ```bash
-   # Download to your computer then upload via FTP to www/ directory
-   # Or use command line if SSH is available:
-   cd ~/www
-   wget https://github.com/gjai/n3xtweb/archive/main.zip
-   unzip main.zip
-   mv n3xtweb-main/* ./
-   rm -rf n3xtweb-main/ main.zip
-   ```
-
-3. **Set OVH-Specific Permissions** (via FTP client or SSH)
-   ```bash
-   # Essential directories need write permissions
-   chmod 755 -R ./
-   chmod 755 config/ logs/ backups/ uploads/
-   # Note: On OVH shared hosting, avoid 777 permissions
-   ```
-
-4. **Configure OVH PHP Settings**
-   The included `.ovhconfig` file automatically sets:
-   - PHP version 8.2 (recommended)
-   - Production environment
-   - Optimal security settings
-
-5. **Database Configuration for OVH**
-   When running `install.php`, use your OVH database credentials:
-   ```
-   DB Host: mysql51-66.perso (example - check your OVH panel)
-   DB Name: your_database_name
-   DB User: your_database_user  
-   DB Pass: your_database_password
-   ```
-
-6. **Security Verification**
-   ✓ Verify `.htaccess` is working (sensitive directories should be blocked)
-   ✓ Check `robots.txt` is accessible
-   ✓ Confirm `uploads/.htaccess` prevents PHP execution
-   ✓ Test admin login at `/admin/login.php`
-
-#### OVH-Specific File Structure
-```
-www/                          # Your OVH web root
-├── .ovhconfig               # PHP version and environment settings
-├── .htaccess               # OVH-compatible security rules
-├── uploads/.htaccess       # Blocks PHP execution in uploads
-├── config/config.php       # Database config with PDO examples
-└── [rest of N3XT files]
-```
-
-#### OVH Security Best Practices
-
-**File Permissions**
-- Use 755 for directories and 644 for files
-- Avoid 777 permissions on shared hosting
-- The included `.htaccess` files provide additional protection
-
-**Database Security**
-- Use the PDO connection example in `config/config.php`
-- Always use prepared statements (built into N3XT)
-- Keep database credentials secure
-
-**Performance Optimization**
-- The `.ovhconfig` forces PHP 8.2 for better performance
-- Caching headers are optimized for shared hosting
-- File compression is enabled in `.htaccess`
-
-**Backup Strategy**
+#### 1. Download and Prepare
 ```bash
-# Regular backups (automate if possible)
-# Download via admin panel or create scheduled task
-# Store backups outside web root when possible
+# Download latest release
+wget https://github.com/gjai/n3xtweb/archive/main.zip
+unzip main.zip
+mv n3xtweb-main/* /path/to/webroot/
+cd /path/to/webroot/
 ```
 
-#### OVH-Specific Troubleshooting
-
-**Common OVH Issues and Solutions**
-
-**PHP Version Problems**
-```
-Problem: Old PHP version being used
-Solution: Verify .ovhconfig file is present and readable
-Check: OVH control panel > PHP configuration
+#### 2. Set Directory Permissions
+```bash
+chmod 755 -R .
+chmod 777 config/ logs/ backups/ uploads/
 ```
 
-**Database Connection Issues**
+#### 3. Run Installation Wizard
+Navigate to `http://yourdomain.com/install.php` and follow these steps:
+
+1. **Language Selection** - Choose French (default) or English
+2. **System Requirements Check** - Verify server compatibility
+3. **Administrator Configuration** - Set up admin account with email verification
+4. **Database Configuration** - Configure MySQL connection
+5. **Finalization** - Automatic cleanup and system initialization
+
+#### 4. Post-Installation Security
+- Installation files are automatically removed
+- Admin directory is renamed for security
+- Maintenance mode is enabled by default
+- SSL/TLS configuration recommended
+
+### Modular Configuration
+
+The installation automatically creates module-specific configuration tables:
+
+| Module | Configuration Table | Purpose |
+|--------|-------------------|---------|
+| Backup | `{prefix}backup_config` | Backup settings and retention policies |
+| Update | `{prefix}update_config` | Update sources and procedures |
+| Notification | `{prefix}notification_config` | Email and messaging settings |
+| Maintenance | `{prefix}maintenance_config` | Automated maintenance schedules |
+| Security | `{prefix}security_config` | Security policies and thresholds |
+| Events | `{prefix}event_config` | Event logging and monitoring |
+
+### Migration System
+
+The system includes a comprehensive migration tracking system:
+
+- **Module Migrations** - Tracked in `{prefix}module_migrations` table
+- **Version Control** - Each module tracks its schema version
+- **Automatic Execution** - Migrations run automatically during installation/updates
+- **Rollback Support** - Migration rollback capabilities for development
+
+### Compliance Rules
+
+#### Security Compliance
+- All forms include CSRF protection
+- SQL queries use prepared statements
+- Input validation and sanitization
+- Session security with configurable timeouts
+- IP blocking and rate limiting
+- Security audit logging
+
+#### Modular Compliance
+- Each module is self-contained
+- Configuration stored in dedicated tables
+- No cross-module dependencies (except EventManager)
+- Consistent naming conventions
+- Standardized error handling
+
+#### Update Compliance
+- Personal configuration files are preserved
+- Custom files listed in `update.excludes` are protected
+- Automatic backup before updates
+- Rollback capability on failure
+- Migration tracking prevents conflicts
+
+## 🏢 OVH Shared Hosting Installation
+
+N3XT WEB is fully optimized for **OVH shared hosting (mutualisé)** with special configurations.
+
+### OVH-Specific Installation Steps
+
+1. **Prepare OVH Environment**
+   - Log in to OVH control panel
+   - Create MySQL database and note credentials
+   - Access hosting via FTP/SFTP
+
+2. **Upload Files**
+   - Download N3XT WEB from GitHub
+   - Extract and upload to domain root via FTP
+   - Ensure `.htaccess` and `.ovhconfig` are uploaded
+
+3. **Configure Database** (Pre-filled for OVH)
+   - Host: `mysql51-XX.perso` (automatically detected)
+   - Database name: Your OVH database name
+   - Username: Your OVH database username
+   - Password: Your OVH database password
+
+4. **Run Installation**
+   - Navigate to `https://yourdomain.com/install.php`
+   - Installation wizard includes OVH-specific optimizations
+   - Automatic cleanup and security hardening
+
+## 📚 Administration
+
+### Back Office Access
+The back office is accessible through a renamed directory for security:
+- Default URL: `https://yourdomain.com/bo/` (renamed during installation)
+- Login with the administrator account created during installation
+- Enable maintenance mode for secure updates and maintenance
+
+### Module Management
+Each module provides dedicated administration interfaces:
+- **EventManager**: Event logs and monitoring (planned: `/bo/events.php`)
+- **SecurityManager**: Security policies (planned: `/bo/security.php`)  
+- **BackupManager**: Backup operations at `/bo/restore.php`
+- **UpdateManager**: System updates at `/bo/update.php`
+- **MaintenanceManager**: Maintenance tasks at `/bo/maintenance.php`
+
+## 🛡️ Security Features
+
+### Core Security
+- **CSRF Protection** - All forms protected against cross-site request forgery
+- **SQL Injection Prevention** - PDO prepared statements throughout
+- **XSS Protection** - Input sanitization and output encoding
+- **Session Security** - Secure session handling with configurable timeouts
+- **Password Security** - Configurable complexity requirements and hashing
+
+### Access Control
+- **IP Management** - Whitelist/blacklist functionality
+- **Rate Limiting** - Configurable login attempt limits
+- **Brute Force Protection** - Automatic IP blocking
+- **Two-Factor Authentication** - Optional 2FA support (SecurityManager)
+- **Session Management** - Secure token generation and validation
+
+### Monitoring & Auditing
+- **Security Events** - Comprehensive security event logging
+- **Threat Detection** - Real-time threat level assessment
+- **Security Scanning** - Automated security health checks
+- **Audit Trails** - Complete access and action logging
+- **Alert System** - Critical security event notifications
+
+## 🧩 Modularity & Architecture
+
+### Design Principles
+- **Separation of Concerns** - Each module handles specific functionality
+- **Loose Coupling** - Minimal dependencies between modules
+- **High Cohesion** - Related functionality grouped together
+- **Extensibility** - Easy to add new modules or extend existing ones
+- **Maintainability** - Clear structure and consistent coding standards
+
+### Module Structure
 ```
-Problem: Cannot connect to database
-Solution: Verify database credentials in OVH control panel
-Check: Use full hostname from OVH (e.g., mysql51-66.perso)
-Note: Some OVH plans use different MySQL servers
+modules/
+├── EventManager/         # Event logging and monitoring
+│   ├── EventManager.php  # Core module class
+│   ├── views/            # Admin interface views
+│   └── README.md         # Module documentation
+├── SecurityManager/      # Security policies and protection
+├── BackupManager/        # Backup and restore operations
+├── UpdateManager/        # System updates and versioning
+├── NotificationManager/  # Email and messaging services
+└── MaintenanceManager/   # Automated maintenance tasks
 ```
 
-**File Permission Errors**
-```
-Problem: Cannot write to directories
-Solution: Set correct permissions via FTP client
-OVH Safe: chmod 755 for directories, 644 for files
-Avoid: Using 777 permissions on shared hosting
-```
+### Configuration Management
+- **Database-Driven** - All configuration stored in database tables
+- **Module-Specific** - Each module has its own configuration table
+- **Runtime Configuration** - No configuration file editing required
+- **Version Control** - Configuration changes tracked and versioned
+- **Environment Agnostic** - Same codebase works across environments
 
-**Htaccess Not Working**
-```
-Problem: Sensitive files accessible directly  
-Solution: Verify .htaccess upload and OVH plan supports mod_rewrite
-Check: Contact OVH support if rewrite rules don't work
-```
+### Inter-Module Communication
+- **Event System** - Modules communicate via EventManager
+- **Service Layer** - Shared services for common functionality
+- **Dependency Injection** - Loose coupling through DI patterns
+- **API Contracts** - Well-defined interfaces between modules
+- **Error Handling** - Consistent error handling across modules
 
-**Upload Directory Issues**
-```
-Problem: PHP files can be executed in uploads/
-Solution: Ensure uploads/.htaccess is present and working
-Verify: Test by trying to access a .php file in uploads/
-```
+## 🗺️ Roadmap
 
-**Performance Issues**
-```
-Problem: Site runs slowly
-Solution: Check .ovhconfig forces PHP 8.2
-Enable: Compression and caching via .htaccess
-Monitor: Resource usage in OVH control panel
-```
+### Version 3.0 (Q1 2024)
+- **Multi-Language Frontend** - Full frontend internationalization
+- **API System** - RESTful API for external integrations
+- **Plugin Architecture** - Third-party plugin support
+- **Advanced Analytics** - Comprehensive system analytics dashboard
+- **Mobile App** - Companion mobile application for administration
 
-#### OVH Maintenance Tips
+### Version 2.6 (Next Release)
+- **Enhanced SecurityManager** - Advanced threat detection algorithms
+- **Performance Monitoring** - Real-time performance metrics
+- **Automated Testing** - Comprehensive test suite implementation
+- **Documentation Portal** - Interactive documentation system
+- **Theme System** - Customizable admin interface themes
 
-- **Regular Updates**: Use the built-in update system monthly
-- **Monitor Logs**: Check logs regularly via admin panel  
-- **Backup Schedule**: Create weekly backups minimum
-- **Security Scan**: Review access logs for suspicious activity
-- **Resource Monitoring**: Monitor disk space and bandwidth in OVH panel
+### Ongoing Development
+- **Security Hardening** - Continuous security improvements
+- **Performance Optimization** - Ongoing performance enhancements
+- **OVH Integration** - Deeper OVH hosting integration
+- **Community Features** - User feedback and contribution systems
+- **Enterprise Features** - Advanced features for enterprise deployments
 
-## 🔧 Configuration
-
-### Database Configuration
-The system uses MySQL/MariaDB for data storage. Default configuration optimized for nxtxyzylie618 hosting:
-
-```php
-define('DB_HOST', 'nxtxyzylie618.mysql.db');
-define('DB_NAME', 'nxtxyzylie618_db');
-define('DB_USER', 'nxtxyzylie618_user');
-define('DB_PASS', 'your_secure_password');
-```
-
-### OVH Database Configuration with PDO
-For OVH shared hosting, use the included PDO example in `config/config.php`:
-
-```php
-// Example for OVH shared hosting
-define('DB_HOST', 'mysql51-66.perso'); // Your OVH MySQL server
-define('DB_NAME', 'your_ovh_database'); // Database name from OVH panel
-define('DB_USER', 'your_ovh_user');     // Username from OVH panel  
-define('DB_PASS', 'your_ovh_password'); // Password from OVH panel
-
-// Use the PDO connection function (uncomment in config.php)
-$pdo = getPDOConnection();
-```
-
-### Security Settings
-Security features are configurable through the Back Office and disabled by default:
-```php
-// Security features (disabled by default, configurable in BO)
-define('ENABLE_CAPTCHA', false);
-define('ENABLE_LOGIN_ATTEMPTS_LIMIT', false);  
-define('ENABLE_IP_BLOCKING', false);
-define('ENABLE_IP_TRACKING', false);
-```
-
-Traditional security constants remain available:
-```php
-define('ADMIN_SESSION_TIMEOUT', 3600); // 1 hour
-define('MAX_LOGIN_ATTEMPTS', 3);
-define('LOGIN_LOCKOUT_TIME', 900); // 15 minutes
-```
-
-### GitHub Integration
-For automatic updates, configure GitHub repository:
-```php
-define('GITHUB_OWNER', 'gjai');
-define('GITHUB_REPO', 'n3xtweb');
-```
-
-## 🎯 Usage
-
-### Admin Panel Access
-1. Navigate to `/admin/login.php`
-2. Enter your admin credentials
-3. Complete captcha if required (after failed attempts)
-
-### System Updates
-1. Go to **System Update** in admin panel
-2. Check for available updates
-3. Create backup before updating
-4. Scan for unexpected files
-5. Download and apply updates
-
-### Backup Management
-1. Access **Backup & Restore** section
-2. Create new backups or upload existing ones
-3. Download backups for external storage
-4. Restore system from backup when needed
-
-### Maintenance Mode
-- Enable/disable through configuration
-- Displays maintenance page to visitors
-- Admins can still access the system
-- Preview maintenance page: `/maintenance.php?preview=1`
-
-## 🗂️ Directory Structure
-
-```
-n3xtweb/
-├── admin/              # Admin panel files
-│   ├── index.php       # Main dashboard
-│   ├── login.php       # Authentication
-│   ├── update.php      # Update management
-│   ├── restore.php     # Backup & restore
-│   └── captcha.php     # Security captcha
-├── assets/             # Static assets
-│   ├── css/           # Stylesheets
-│   └── js/            # JavaScript files
-├── config/            # Configuration files
-│   └── config.php     # Main configuration (with PDO examples)
-├── includes/          # Core functionality
-│   └── functions.php  # Core functions and classes
-├── backups/           # System backups
-├── logs/              # System logs
-├── uploads/           # User uploads
-│   └── .htaccess      # Security rules for uploads (blocks PHP)
-├── .htaccess         # Apache configuration (OVH compatible)
-├── .ovhconfig        # OVH PHP version and environment settings
-├── robots.txt        # Search engine directives (enhanced)
-├── index.php         # Main landing page
-├── install.php       # Installation wizard
-└── maintenance.php   # Maintenance mode page
-```
-
-## 🔒 Security Features
-
-### Authentication
-- Secure password hashing with Argon2ID
-- Session management with regeneration
-- CSRF token protection on all forms
-- IP-based rate limiting and blocking
-
-### File Security
-- `.htaccess` rules block access to sensitive files
-- Robots.txt prevents search engine indexing
-- File upload validation and size limits
-- Safe filename generation
-
-### Database Security
-- All queries use PDO prepared statements
-- Input sanitization and validation
-- SQL injection prevention
-- Database connection encryption
-
-## 📝 Logging
-
-### Access Logs (`logs/access.log`)
-- Login attempts (successful and failed)
-- IP addresses and user agents
-- Timestamp and result status
-
-### Update Logs (`logs/update.log`)
-- System update activities
-- Backup creation and restoration
-- File operations and results
-
-### System Logs (`logs/system.log`)
-- General system events
-- Error messages and warnings
-- Performance monitoring
-
-## 🔄 Update Process
-
-1. **Check for Updates**: Connects to GitHub API to check for newer releases
-2. **Create Backup**: Automatically creates full system backup
-3. **File Scanning**: Identifies unexpected files that might conflict
-4. **Download Release**: Downloads latest release from GitHub
-5. **Apply Update**: Safely replaces core files while preserving critical data
-
-## 🛡️ Backup & Restore
-
-### Backup Contents
-- Complete file system (excluding logs and temporary files)
-- Full database dump with structure and data
-- Configuration files and uploads
-
-### Restore Options
-- **Database Only**: Restore database from backup.sql
-- **Files Only**: Restore system files
-- **Selective Restore**: Choose specific components
-- **Configuration Preservation**: Keep current config during restore
+### Future Considerations
+- **Cloud Integration** - AWS, Azure, GCP deployment options
+- **Container Support** - Docker containerization
+- **Microservices** - Potential microservices architecture
+- **Machine Learning** - AI-powered security and analytics
+- **Blockchain Integration** - Blockchain-based audit trails
 
 ## 🚨 Troubleshooting
 
-### Common Issues
-
-**Installation Problems**
+### Installation Problems
 - Check file permissions (755 for files, 777 for writable directories)
 - Verify PHP extensions are installed
 - Ensure database credentials are correct
 
-**Login Issues**
-- If you encounter database connection errors, use the **"🔧 Tester la connexion BDD"** button on the login form
+### Login Issues
+- Use the **"🔧 Tester la connexion BDD"** button on the login form
 - Check database credentials in `config/config.php`
 - Verify database host and database name are correct
-- **Database diagnostic messages** provide specific error codes and suggestions
+- Database diagnostic messages provide specific error codes and suggestions
 - Check if IP is blocked (logs/blocked_ips.json)
-- Verify database connection
 - Clear browser cache and cookies
 
-**Update Problems**
+### Update Problems
 - Ensure GitHub API is accessible
 - Check file permissions for backup directory
 - Review update logs for specific errors
 
-**Backup/Restore Issues**
+### Backup/Restore Issues
 - Verify ZIP extension is installed
 - Check available disk space
 - Ensure proper file permissions
-
-### Log Analysis
-- Access logs through admin panel
-- Check system logs for detailed error messages
-- Monitor update logs for process status
 
 ## 🤝 Contributing
 
@@ -458,7 +326,7 @@ n3xtweb/
 
 ## 📄 License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the MIT License.
 
 ## 🆘 Support
 
@@ -468,4 +336,4 @@ For support and questions:
 
 ---
 
-**N3XT WEB** - Secure • Responsive • Powerful
+**N3XT WEB** - Secure • Modular • Powerful
