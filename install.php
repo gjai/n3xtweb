@@ -475,6 +475,7 @@ $allRequirementsMet = !in_array(false, $requirements);
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="robots" content="noindex, nofollow">
+    <link rel="icon" type="image/png" href="fav.png">
     <title><?php echo LanguageHelper::get('installation_title', $language); ?></title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -887,14 +888,21 @@ $allRequirementsMet = !in_array(false, $requirements);
             <div class="install-header">
                 <div class="logo">
                     <?php 
-                    $logoPath = 'assets/images/logo.png';
+                    $logoPath = 'fav.png';
                     if (file_exists($logoPath)): ?>
                         <img src="<?php echo $logoPath; ?>?v=<?php echo time(); ?>" 
                              alt="N3XT WEB" 
                              style="max-width: 80px; max-height: 60px;">
-                    <?php else: ?>
-                        🚀
-                    <?php endif; ?>
+                    <?php else:
+                        $logoPath = 'assets/images/logo.png';
+                        if (file_exists($logoPath)): ?>
+                            <img src="<?php echo $logoPath; ?>?v=<?php echo time(); ?>" 
+                                 alt="N3XT WEB" 
+                                 style="max-width: 80px; max-height: 60px;">
+                        <?php else: ?>
+                            🚀
+                        <?php endif; 
+                    endif; ?>
                 </div>
                 <h1 class="install-title">N3XT WEB</h1>
                 <p class="install-subtitle"><?php echo LanguageHelper::get('installation_title', $language); ?></p>

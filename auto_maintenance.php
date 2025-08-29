@@ -67,13 +67,13 @@ class MaintenanceManager {
     }
     
     /**
-     * Perform log rotation
+     * Perform log rotation with configurable retention settings
      */
     public static function performLogRotation() {
         $results = [
             'status' => 'success',
             'rotated_files' => 0,
-            'compressed_files' => 0,
+            'archived_files' => 0,
             'deleted_old_files' => 0
         ];
         
@@ -82,39 +82,60 @@ class MaintenanceManager {
                 return array_merge($results, ['status' => 'skipped', 'message' => 'Log directory does not exist']);
             }
             
+            // Get configurable settings
+            $archiveAfterHours = (int) Configuration::get('log_archive_hours', 24);
+            $deleteAfterDays = (int) Configuration::get('log_delete_days', 7);
+            
             $logFiles = glob(LOG_PATH . '/*.log');
+            $archiveCutoffTime = time() - ($archiveAfterHours * 60 * 60);
+            $deleteCutoffTime = time() - ($deleteAfterDays * 24 * 60 * 60);
             
             foreach ($logFiles as $logFile) {
-                $fileSize = filesize($logFile);
+                $fileModTime = filemtime($logFile);
+                $fileName = basename($logFile);
                 
-                // Rotate if file is larger than 10MB
-                if ($fileSize > 10 * 1024 * 1024) {
-                    $rotatedName = $logFile . '.' . date('Y-m-d-H-i-s');
+                // Archive logs older than configured hours (default 24h)
+                if ($fileModTime < $archiveCutoffTime) {
+                    $archiveName = LOG_PATH . '/' . pathinfo($fileName, PATHINFO_FILENAME) . '_' . date('Y-m-d-H-i-s', $fileModTime) . '.zip';
                     
-                    if (rename($logFile, $rotatedName)) {
-                        $results['rotated_files']++;
-                        
-                        // Compress rotated file
-                        if (function_exists('gzopen')) {
-                            $gz = gzopen($rotatedName . '.gz', 'wb9');
-                            if ($gz) {
-                                gzwrite($gz, file_get_contents($rotatedName));
-                                gzclose($gz);
-                                unlink($rotatedName);
-                                $results['compressed_files']++;
+                    if (class_exists('ZipArchive')) {
+                        $zip = new ZipArchive();
+                        if ($zip->open($archiveName, ZipArchive::CREATE) === TRUE) {
+                            $zip->addFile($logFile, $fileName);
+                            $zip->close();
+                            
+                            // Remove original log after successful archiving
+                            if (file_exists($archiveName)) {
+                                unlink($logFile);
+                                $results['archived_files']++;
+                                
+                                // Create new empty log file
+                                touch($logFile);
+                                chmod($logFile, 0644);
                             }
+                        }
+                    } else {
+                        // Fallback: rename with timestamp if ZipArchive not available
+                        $rotatedName = $logFile . '.' . date('Y-m-d-H-i-s', $fileModTime);
+                        if (rename($logFile, $rotatedName)) {
+                            $results['rotated_files']++;
+                            // Create new empty log file
+                            touch($logFile);
+                            chmod($logFile, 0644);
                         }
                     }
                 }
             }
             
-            // Clean up old rotated logs (older than 30 days)
-            $oldFiles = glob(LOG_PATH . '/*.log.*');
-            $cutoffTime = time() - (30 * 24 * 60 * 60);
+            // Clean up old archived logs (older than configured days)
+            $archiveFiles = array_merge(
+                glob(LOG_PATH . '/*.zip'),
+                glob(LOG_PATH . '/*.log.*')
+            );
             
-            foreach ($oldFiles as $oldFile) {
-                if (filemtime($oldFile) < $cutoffTime) {
-                    unlink($oldFile);
+            foreach ($archiveFiles as $archiveFile) {
+                if (filemtime($archiveFile) < $deleteCutoffTime) {
+                    unlink($archiveFile);
                     $results['deleted_old_files']++;
                 }
             }
