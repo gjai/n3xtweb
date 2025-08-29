@@ -1699,6 +1699,110 @@ class InstallHelper {
         
         return $sql;
     }
+    
+    /**
+     * Clean installation session data
+     */
+    public static function cleanInstallationSession() {
+        $installKeys = [
+            'install_language',
+            'verification_code',
+            'verification_email', 
+            'verification_time',
+            'admin_login',
+            'admin_first_name',
+            'admin_last_name',
+            'db_config',
+            'bo_directory',
+            'admin_username'
+        ];
+        
+        foreach ($installKeys as $key) {
+            if (isset($_SESSION[$key])) {
+                unset($_SESSION[$key]);
+            }
+        }
+        
+        Logger::log("Installation session data cleaned", LOG_LEVEL_INFO, 'install');
+    }
+    
+    /**
+     * Reset installation state completely
+     */
+    public static function resetInstallationState() {
+        // Clean session data
+        self::cleanInstallationSession();
+        
+        // Clear any temporary installation files
+        $tempFiles = [
+            'config/config.php',
+            'config/.installed'
+        ];
+        
+        foreach ($tempFiles as $file) {
+            if (file_exists($file)) {
+                unlink($file);
+            }
+        }
+        
+        // Clear cache directory if it exists
+        $rootPath = defined('ROOT_PATH') ? ROOT_PATH : dirname(__DIR__);
+        $cacheDir = $rootPath . '/cache';
+        if (is_dir($cacheDir)) {
+            self::clearDirectory($cacheDir);
+        }
+        
+        // Clear session cache
+        if (session_status() === PHP_SESSION_ACTIVE) {
+            session_regenerate_id(true);
+        }
+        
+        Logger::log("Installation state reset completely", LOG_LEVEL_INFO, 'install');
+        
+        return true;
+    }
+    
+    /**
+     * Clear directory contents recursively
+     */
+    private static function clearDirectory($dir) {
+        if (!is_dir($dir)) {
+            return;
+        }
+        
+        $files = array_diff(scandir($dir), array('.', '..'));
+        foreach ($files as $file) {
+            $path = $dir . '/' . $file;
+            if (is_dir($path)) {
+                self::clearDirectory($path);
+                rmdir($path);
+            } else {
+                unlink($path);
+            }
+        }
+    }
+    
+    /**
+     * Validate installation session state
+     */
+    public static function validateInstallationState($step) {
+        switch ($step) {
+            case 3:
+                return isset($_SESSION['install_language']);
+            case 4:
+                return isset($_SESSION['verification_email']) && 
+                       isset($_SESSION['admin_login']) &&
+                       isset($_SESSION['admin_first_name']) &&
+                       isset($_SESSION['admin_last_name']);
+            case 5:
+                return isset($_SESSION['db_config']);
+            case 6:
+                return isset($_SESSION['bo_directory']) && 
+                       isset($_SESSION['admin_username']);
+            default:
+                return true;
+        }
+    }
 }
 
 /**

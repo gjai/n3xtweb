@@ -45,6 +45,38 @@ $step = $_GET['step'] ?? 1;
 $error = '';
 $success = '';
 
+// Handle special parameters
+if (isset($_GET['reset'])) {
+    InstallHelper::resetInstallationState();
+    $success = 'Installation state has been reset. You can start fresh.';
+    $step = 1;
+}
+
+if (isset($_GET['finish']) && isset($_SESSION['installation_ready'])) {
+    // User clicked to access admin panel - now we can safely remove install.php
+    try {
+        if (file_exists(__FILE__)) {
+            unlink(__FILE__);
+            Logger::log('Install.php removed after user confirmed installation completion', LOG_LEVEL_INFO, 'system');
+        }
+        // Redirect to admin panel
+        $adminDir = $_SESSION['bo_directory'] ?? 'bo';
+        header('Location: ' . $adminDir . '/login.php');
+        exit;
+    } catch (Exception $e) {
+        Logger::log('Failed to remove install.php on finish: ' . $e->getMessage(), LOG_LEVEL_WARNING, 'system');
+        $adminDir = $_SESSION['bo_directory'] ?? 'bo';
+        header('Location: ' . $adminDir . '/login.php');
+        exit;
+    }
+}
+
+// Validate installation session state for steps > 1
+if ($step > 1 && !InstallHelper::validateInstallationState($step)) {
+    $error = 'Installation session expired or invalid. Please restart the installation.';
+    $step = 1;
+}
+
 // Handle form submissions
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $step = (int) ($_POST['step'] ?? 1);
@@ -205,15 +237,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         // Log successful installation
                         Logger::log("Installation completed successfully for admin: {$firstName} {$lastName} ({$adminUser})", LOG_LEVEL_INFO, 'install');
                         
-                        // Auto-remove install.php for security
-                        try {
-                            if (file_exists(__FILE__)) {
-                                unlink(__FILE__);
-                                Logger::log('Install.php automatically removed after successful installation', LOG_LEVEL_INFO, 'system');
-                            }
-                        } catch (Exception $e) {
-                            Logger::log('Failed to remove install.php: ' . $e->getMessage(), LOG_LEVEL_WARNING, 'system');
-                        }
+                        // Mark installation as ready for completion
+                        $_SESSION['installation_ready'] = true;
                         
                         $step = 6;
                     } else {
@@ -1174,14 +1199,20 @@ $allRequirementsMet = !in_array(false, $requirements);
                             <strong>🔒 Security Information:</strong>
                             <ul style="text-align: left; margin: 10px 0;">
                                 <li>Back Office directory: <code><?php echo htmlspecialchars($_SESSION['bo_directory'] ?? 'bo'); ?></code></li>
-                                <li>Remove or restrict access to this installation file</li>
+                                <li>Installation file will be automatically removed when you access the admin panel</li>
                                 <li>Enable HTTPS if possible</li>
                             </ul>
                         </div>
                         
-                        <a href="<?php echo htmlspecialchars($_SESSION['bo_directory'] ?? 'bo'); ?>/login.php" class="btn btn-primary">
-                            Access Admin Panel
-                        </a>
+                        <div style="margin-top: 20px;">
+                            <a href="?finish=1" class="btn btn-primary">
+                                Access Admin Panel & Complete Installation
+                            </a>
+                            <br><br>
+                            <a href="?reset=1" class="btn btn-secondary" style="background-color: #6c757d;">
+                                Reset Installation (if needed)
+                            </a>
+                        </div>
                     </div>
                 <?php endif; ?>
             </div>
