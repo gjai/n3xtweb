@@ -55,6 +55,11 @@ class Configuration {
         'enable_error_display' => false,
         'log_queries' => false,
         
+        // Log Management Settings  
+        'log_archive_hours' => 24,
+        'log_delete_days' => 7,
+        'log_max_size_mb' => 10,
+        
         // GitHub Integration
         'github_owner' => 'gjai',
         'github_repo' => 'n3xtweb',
@@ -85,7 +90,13 @@ class Configuration {
         'site_logo' => '',
         'site_favicon' => '/fav.png',
         'site_language' => 'fr',
-        'site_timezone' => 'Europe/Paris'
+        'site_timezone' => 'Europe/Paris',
+        
+        // Admin Profile Configuration
+        'admin_first_name' => '',
+        'admin_last_name' => '',
+        'admin_email' => '',
+        'admin_language' => 'fr'
     ];
     
     /**

@@ -302,6 +302,82 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                     $settingsMessageType = 'warning';
                 }
                 break;
+                
+            case 'update_admin_profile':
+                $updatedSettings = [];
+                $profileSettings = ['admin_first_name', 'admin_last_name', 'admin_email', 'admin_language'];
+                
+                foreach ($profileSettings as $key) {
+                    if (isset($_POST[$key])) {
+                        $value = Security::sanitizeInput($_POST[$key]);
+                        if ($key === 'admin_email' && !filter_var($value, FILTER_VALIDATE_EMAIL)) {
+                            $settingsMessage = 'Adresse email invalide.';
+                            $settingsMessageType = 'danger';
+                            break 2;
+                        }
+                        Configuration::set($key, $value);
+                        $updatedSettings[] = $key;
+                    }
+                }
+                
+                if (!empty($updatedSettings)) {
+                    $settingsMessage = 'Profil administrateur mis à jour avec succès.';
+                    $settingsMessageType = 'success';
+                    Logger::logAccess($_SESSION['admin_username'], true, 'Admin profile updated');
+                } else {
+                    $settingsMessage = 'Aucune modification à apporter au profil.';
+                    $settingsMessageType = 'warning';
+                }
+                break;
+                
+            case 'change_admin_password':
+                $currentPassword = $_POST['current_password'] ?? '';
+                $newPassword = $_POST['new_password'] ?? '';
+                $confirmPassword = $_POST['confirm_password'] ?? '';
+                
+                if (empty($currentPassword) || empty($newPassword) || empty($confirmPassword)) {
+                    $settingsMessage = 'Tous les champs de mot de passe sont requis.';
+                    $settingsMessageType = 'danger';
+                    break;
+                }
+                
+                if ($newPassword !== $confirmPassword) {
+                    $settingsMessage = 'La confirmation du mot de passe ne correspond pas.';
+                    $settingsMessageType = 'danger';
+                    break;
+                }
+                
+                if (strlen($newPassword) < 8) {
+                    $settingsMessage = 'Le nouveau mot de passe doit contenir au moins 8 caractères.';
+                    $settingsMessageType = 'danger';
+                    break;
+                }
+                
+                try {
+                    $db = Database::getInstance();
+                    $admin = $db->fetchOne("SELECT password FROM " . DB_PREFIX . "admin_users WHERE username = ?", [$_SESSION['admin_username']]);
+                    
+                    if (!$admin || !password_verify($currentPassword, $admin['password'])) {
+                        $settingsMessage = 'Mot de passe actuel incorrect.';
+                        $settingsMessageType = 'danger';
+                        Logger::logAccess($_SESSION['admin_username'], false, 'Failed password change attempt');
+                        break;
+                    }
+                    
+                    $hashedPassword = password_hash($newPassword, PASSWORD_DEFAULT);
+                    $db->execute("UPDATE " . DB_PREFIX . "admin_users SET password = ?, updated_at = NOW() WHERE username = ?", 
+                                [$hashedPassword, $_SESSION['admin_username']]);
+                    
+                    $settingsMessage = 'Mot de passe changé avec succès.';
+                    $settingsMessageType = 'success';
+                    Logger::logAccess($_SESSION['admin_username'], true, 'Password changed successfully');
+                    
+                } catch (Exception $e) {
+                    $settingsMessage = 'Erreur lors du changement de mot de passe.';
+                    $settingsMessageType = 'danger';
+                    Logger::log("Password change error: " . $e->getMessage(), LOG_LEVEL_ERROR);
+                }
+                break;
         }
     }
 }
@@ -402,6 +478,11 @@ if (file_exists($accessLogFile)) {
                     <li class="nav-item">
                         <a href="?page=logs" class="nav-link <?php echo $currentPage === 'logs' ? 'active' : ''; ?>">
                             📋 Logs
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="?page=admin-config" class="nav-link <?php echo $currentPage === 'admin-config' ? 'active' : ''; ?>">
+                            👤 Configuration administrateur
                         </a>
                     </li>
                     <li class="nav-item">
@@ -582,6 +663,130 @@ if (file_exists($accessLogFile)) {
                                 <?php else: ?>
                                     <p>Fichier journal non trouvé ou vide.</p>
                                 <?php endif; ?>
+                            </div>
+                        </div>
+                    </div>
+                    
+                <?php elseif ($currentPage === 'admin-config'): ?>
+                    <?php if (!empty($settingsMessage)): ?>
+                        <div class="alert alert-<?php echo $settingsMessageType; ?>">
+                            <?php echo htmlspecialchars($settingsMessage); ?>
+                        </div>
+                    <?php endif; ?>
+                    
+                    <div class="card">
+                        <div class="card-header">
+                            <h2 class="card-title">👤 Configuration Administrateur</h2>
+                        </div>
+                        <div class="card-body">
+                            <div class="alert alert-info">
+                                <strong>Configuration du compte administrateur</strong><br>
+                                Gérez les informations personnelles, sécurité et préférences de votre compte administrateur.
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <h4>Informations personnelles</h4>
+                                    <form method="post">
+                                        <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrfToken); ?>">
+                                        <input type="hidden" name="action" value="update_admin_profile">
+                                        
+                                        <div class="form-group">
+                                            <label for="admin_first_name" class="form-label">Prénom</label>
+                                            <input type="text" 
+                                                   id="admin_first_name" 
+                                                   name="admin_first_name" 
+                                                   class="form-control" 
+                                                   value="<?php echo htmlspecialchars(Configuration::get('admin_first_name', '')); ?>"
+                                                   placeholder="Votre prénom">
+                                        </div>
+                                        
+                                        <div class="form-group">
+                                            <label for="admin_last_name" class="form-label">Nom</label>
+                                            <input type="text" 
+                                                   id="admin_last_name" 
+                                                   name="admin_last_name" 
+                                                   class="form-control" 
+                                                   value="<?php echo htmlspecialchars(Configuration::get('admin_last_name', '')); ?>"
+                                                   placeholder="Votre nom de famille">
+                                        </div>
+                                        
+                                        <div class="form-group">
+                                            <label for="admin_email" class="form-label">Email</label>
+                                            <input type="email" 
+                                                   id="admin_email" 
+                                                   name="admin_email" 
+                                                   class="form-control" 
+                                                   value="<?php echo htmlspecialchars(Configuration::get('admin_email', '')); ?>"
+                                                   placeholder="votre@email.com">
+                                        </div>
+                                        
+                                        <div class="form-group">
+                                            <label for="admin_language" class="form-label">Langue préférée</label>
+                                            <select id="admin_language" name="admin_language" class="form-control">
+                                                <option value="fr" <?php echo Configuration::get('admin_language', 'fr') === 'fr' ? 'selected' : ''; ?>>Français</option>
+                                                <option value="en" <?php echo Configuration::get('admin_language', 'fr') === 'en' ? 'selected' : ''; ?>>English</option>
+                                            </select>
+                                        </div>
+                                        
+                                        <button type="submit" class="btn btn-primary">Mettre à jour le profil</button>
+                                    </form>
+                                </div>
+                                
+                                <div class="col-md-6">
+                                    <h4>Sécurité</h4>
+                                    <form method="post">
+                                        <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrfToken); ?>">
+                                        <input type="hidden" name="action" value="change_admin_password">
+                                        
+                                        <div class="form-group">
+                                            <label for="current_password" class="form-label">Mot de passe actuel</label>
+                                            <input type="password" 
+                                                   id="current_password" 
+                                                   name="current_password" 
+                                                   class="form-control" 
+                                                   required
+                                                   placeholder="Votre mot de passe actuel">
+                                        </div>
+                                        
+                                        <div class="form-group">
+                                            <label for="new_password" class="form-label">Nouveau mot de passe</label>
+                                            <input type="password" 
+                                                   id="new_password" 
+                                                   name="new_password" 
+                                                   class="form-control" 
+                                                   required
+                                                   minlength="8"
+                                                   placeholder="Nouveau mot de passe (8 caractères min)">
+                                        </div>
+                                        
+                                        <div class="form-group">
+                                            <label for="confirm_password" class="form-label">Confirmer le nouveau mot de passe</label>
+                                            <input type="password" 
+                                                   id="confirm_password" 
+                                                   name="confirm_password" 
+                                                   class="form-control" 
+                                                   required
+                                                   placeholder="Confirmez le nouveau mot de passe">
+                                        </div>
+                                        
+                                        <button type="submit" class="btn btn-warning">Changer le mot de passe</button>
+                                    </form>
+                                    
+                                    <hr>
+                                    
+                                    <h5>Avatar</h5>
+                                    <div class="avatar-preview" style="margin: 15px 0;">
+                                        <div style="width: 64px; height: 64px; border-radius: 50%; background: #3498db; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 24px;">
+                                            <?php echo strtoupper(substr($_SESSION['admin_username'], 0, 1)); ?>
+                                        </div>
+                                    </div>
+                                    <p class="text-muted"><small>L'avatar est généré automatiquement à partir de votre nom d'utilisateur.</small></p>
+                                    
+                                    <h5>Sessions actives</h5>
+                                    <p>Session actuelle : <span class="badge badge-success">Connecté</span></p>
+                                    <p class="text-muted"><small>Dernière connexion : <?php echo date('d/m/Y H:i:s'); ?></small></p>
+                                </div>
                             </div>
                         </div>
                     </div>
