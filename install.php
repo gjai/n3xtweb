@@ -31,6 +31,7 @@ if (file_exists('config/config.php')) {
 }
 
 require_once 'includes/functions.php';
+require_once 'modules/Install/InstallPreCheck.php';
 
 // Define system version if not already defined
 if (!defined('SYSTEM_VERSION')) {
@@ -470,27 +471,64 @@ function createAdminUser($dbConfig, $username, $password, $email, $firstName, $l
 }
 
 /**
- * Check system requirements
+ * Check system requirements using comprehensive pre-check system
  */
 function checkSystemRequirements() {
-    $requirements = [
-        'PHP Version >= 7.4' => version_compare(PHP_VERSION, '7.4.0', '>='),
-        'PDO Extension' => extension_loaded('pdo'),
-        'PDO MySQL Extension' => extension_loaded('pdo_mysql'),
-        'GD Extension' => extension_loaded('gd'),
-        'ZIP Extension' => extension_loaded('zip'),
-        'OpenSSL Extension' => extension_loaded('openssl'),
-        'Mail Function' => function_exists('mail'),
-        'Config Directory Writable' => is_writable('config'),
-        'Logs Directory Writable' => is_writable('logs') || !file_exists('logs'),
-        'Backups Directory Writable' => is_writable('backups') || !file_exists('backups')
-    ];
+    $preCheck = new InstallPreCheck();
+    $results = $preCheck->runAllChecks();
+    
+    // Convert to old format for backward compatibility
+    $requirements = [];
+    
+    // PHP Version
+    if (isset($results['checks']['php_version'])) {
+        $check = $results['checks']['php_version'];
+        $requirements['PHP Version >= 7.4'] = $check['status'];
+    }
+    
+    // Extensions
+    if (isset($results['checks']['extensions'])) {
+        foreach ($results['checks']['extensions'] as $ext => $check) {
+            $name = ucfirst($ext) . ' Extension';
+            $requirements[$name] = $check['status'];
+        }
+    }
+    
+    // Add some missing extensions for compatibility
+    $requirements['PDO Extension'] = extension_loaded('pdo');
+    $requirements['PDO MySQL Extension'] = extension_loaded('pdo_mysql');
+    $requirements['ZIP Extension'] = extension_loaded('zip');
+    $requirements['Mail Function'] = function_exists('mail');
+    
+    // Permissions
+    if (isset($results['checks']['permissions'])) {
+        foreach ($results['checks']['permissions'] as $dir => $check) {
+            $name = str_replace('/', '', ucfirst($dir)) . ' Directory Writable';
+            $requirements[$name] = $check['status'];
+        }
+    }
+    
+    // Add uploads directory check if missing
+    if (!isset($requirements['Uploads Directory Writable'])) {
+        $requirements['Uploads Directory Writable'] = is_writable('uploads') || !file_exists('uploads');
+    }
     
     return $requirements;
 }
 
+/**
+ * Get comprehensive system requirements check
+ */
+function getComprehensiveRequirements() {
+    $preCheck = new InstallPreCheck();
+    return $preCheck->runAllChecks();
+}
+
 $requirements = checkSystemRequirements();
 $allRequirementsMet = !in_array(false, $requirements);
+
+// Get comprehensive check for detailed display
+$comprehensiveCheck = getComprehensiveRequirements();
 ?>
 <!DOCTYPE html>
 <html lang="<?php echo $language; ?>">

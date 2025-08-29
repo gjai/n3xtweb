@@ -12,6 +12,7 @@ if (!defined('IN_N3XTWEB')) {
 
 // Charger la classe de base
 require_once __DIR__ . '/../../BaseWidget.php';
+require_once __DIR__ . '/../InstallPreCheck.php';
 
 class InstallStatusWidget extends BaseWidget {
     
@@ -109,31 +110,11 @@ class InstallStatusWidget extends BaseWidget {
      * Vérifie les prérequis système
      */
     private function checkRequirements() {
-        $requirements = [
-            'php_version' => [
-                'name' => 'Version PHP',
-                'required' => '7.4.0',
-                'current' => PHP_VERSION,
-                'status' => version_compare(PHP_VERSION, '7.4.0', '>=')
-            ],
-            'extensions' => []
-        ];
+        // Utiliser la nouvelle classe InstallPreCheck pour des vérifications complètes
+        $preCheck = new InstallPreCheck();
+        $results = $preCheck->runAllChecks();
         
-        // Vérifier les extensions requises
-        $requiredExtensions = ['mysqli', 'json', 'mbstring', 'curl', 'openssl'];
-        foreach ($requiredExtensions as $ext) {
-            $requirements['extensions'][$ext] = [
-                'name' => $ext,
-                'required' => true,
-                'loaded' => extension_loaded($ext),
-                'status' => extension_loaded($ext)
-            ];
-        }
-        
-        // Vérifier les permissions de fichiers
-        $requirements['file_permissions'] = $this->checkFilePermissions();
-        
-        return $requirements;
+        return $results['checks'];
     }
     
     /**

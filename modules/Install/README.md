@@ -2,22 +2,285 @@
 
 ## Vue d'ensemble
 
-Le module Install fournit un système complet de gestion et de surveillance de l'installation du système N3XT WEB. Il vérifie en continu les prérequis, surveille l'état de l'installation et fournit des outils de diagnostic pour assurer le bon fonctionnement du système.
+Le module Install fournit un système complet de gestion et de surveillance de l'installation du système N3XT WEB. Il inclut une **routine de pré-check automatique** qui vérifie tous les prérequis système avant l'installation pour sécuriser et fiabiliser le parcours d'installation.
 
+## 🔍 Routine de pré-check automatique
 
-## Fonctionnalités
-=======
-## Dépendances
+### Vérifications effectuées
 
-Ce module nécessite les fichiers suivants pour fonctionner correctement :
+Le système effectue automatiquement les vérifications suivantes avant toute installation :
 
-### BaseWidget.php
-- **Emplacement** : `modules/BaseWidget.php`
-- **Rôle** : Classe de base pour tous les widgets N3XT WEB
-- **Nécessité** : Obligatoire pour le bon fonctionnement du widget InstallStatusWidget
-- **Description** : Fournit les fonctionnalités communes pour l'affichage et la gestion des widgets
+#### ✅ Version PHP
+- **Minimum requis** : PHP 7.4.0 ou supérieur
+- **Vérification** : Compatible avec PHP 8.x
+- **Diagnostic** : Affichage de la version actuelle et comparaison
 
-**Important** : Le fichier `modules/BaseWidget.php` doit être présent à la racine du dossier modules pour que le widget InstallStatusWidget puisse être chargé correctement.
+#### ✅ Extensions PHP requises
+- **mysqli** : Accès aux bases de données MySQL/MariaDB
+- **json** : Manipulation des données JSON
+- **mbstring** : Gestion des chaînes multi-octets (UTF-8)
+- **curl** : Communications HTTP/HTTPS
+- **openssl** : Chiffrement et certificats SSL
+- **gd** : Manipulation d'images
+
+#### ✅ Permissions des dossiers critiques
+- **config/** : Lecture/écriture pour les fichiers de configuration
+- **uploads/** : Stockage des fichiers téléchargés
+- **logs/** : Écriture des journaux système
+- **backups/** : Sauvegarde automatique
+
+#### ✅ Fichier de configuration
+- **config/config.php** : Vérification d'existence (installation déjà effectuée)
+- **config/config.template.php** : Présence du modèle de configuration
+
+#### ✅ Espace disque disponible
+- **Minimum** : 100 MB d'espace libre
+- **Recommandé** : 500 MB d'espace libre
+- **Diagnostic** : Pourcentage d'utilisation et espace disponible
+
+#### ✅ Connexion base de données
+- Test de connectivité avec les paramètres fournis
+- Validation des droits d'accès
+- Vérification de l'existence de la base
+
+## 🛠️ Dépendances système
+
+### Serveur web
+- **Apache 2.4+** ou **Nginx 1.14+**
+- **Modules requis** : mod_rewrite (Apache), try_files (Nginx)
+
+### PHP Configuration
+```ini
+; Configuration PHP minimale recommandée
+memory_limit = 256M
+max_execution_time = 300
+upload_max_filesize = 50M
+post_max_size = 50M
+max_input_vars = 3000
+```
+
+### Base de données
+- **MySQL 5.7+** ou **MariaDB 10.3+**
+- **Droits requis** : CREATE, ALTER, INSERT, UPDATE, DELETE, SELECT
+
+### Système de fichiers
+- **Permissions** : 755 pour les dossiers, 644 pour les fichiers
+- **Propriétaire** : www-data ou utilisateur du serveur web
+
+## 🚨 Guide de diagnostic et dépannage
+
+### Problèmes PHP courants
+
+#### ❌ Version PHP obsolète
+**Symptôme** : "Version PHP X.X.X trop ancienne"
+```bash
+# Vérifier la version actuelle
+php -v
+
+# Mettre à jour PHP (Ubuntu/Debian)
+sudo apt update
+sudo apt install php8.1 php8.1-cli php8.1-common
+
+# Redémarrer le serveur web
+sudo systemctl restart apache2
+# ou
+sudo systemctl restart nginx
+```
+
+#### ❌ Extensions PHP manquantes
+**Symptôme** : "Extension XXX manquante"
+```bash
+# Ubuntu/Debian
+sudo apt install php-mysql php-json php-mbstring php-curl php-openssl php-gd
+
+# CentOS/RHEL
+sudo yum install php-mysql php-json php-mbstring php-curl php-openssl php-gd
+
+# Redémarrer le serveur web
+sudo systemctl restart apache2
+```
+
+#### ❌ Limites PHP insuffisantes
+**Symptôme** : Installation interrompue, erreurs de timeout
+```ini
+; Éditer /etc/php/8.1/apache2/php.ini
+memory_limit = 256M
+max_execution_time = 300
+upload_max_filesize = 50M
+post_max_size = 50M
+```
+
+### Problèmes de permissions
+
+#### ❌ Dossiers non accessibles
+**Symptôme** : "Dossier XXX non accessible en écriture"
+```bash
+# Corriger les permissions des dossiers
+sudo chmod 755 config/ uploads/ logs/ backups/
+sudo chown -R www-data:www-data config/ uploads/ logs/ backups/
+
+# Vérifier les permissions
+ls -la config/ uploads/ logs/ backups/
+```
+
+#### ❌ SELinux bloquant l'écriture
+**Symptôme** : Permissions correctes mais écriture refusée
+```bash
+# Vérifier SELinux
+sestatus
+
+# Autoriser l'écriture web
+sudo setsebool -P httpd_can_network_connect 1
+sudo chcon -R -t httpd_exec_t /var/www/html/
+```
+
+### Problèmes de base de données
+
+#### ❌ Connexion refusée
+**Symptôme** : "Access denied for user"
+```sql
+-- Vérifier les droits utilisateur
+SHOW GRANTS FOR 'username'@'localhost';
+
+-- Créer un utilisateur avec tous les droits
+CREATE USER 'n3xtweb'@'localhost' IDENTIFIED BY 'password';
+GRANT ALL PRIVILEGES ON n3xtweb_db.* TO 'n3xtweb'@'localhost';
+FLUSH PRIVILEGES;
+```
+
+#### ❌ Base de données inexistante
+**Symptôme** : "Unknown database"
+```sql
+-- Créer la base de données
+CREATE DATABASE n3xtweb_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+```
+
+#### ❌ Serveur inaccessible
+**Symptôme** : "Connection refused" ou "Host unknown"
+```bash
+# Vérifier que MySQL est démarré
+sudo systemctl status mysql
+sudo systemctl start mysql
+
+# Vérifier la connectivité réseau
+telnet database_host 3306
+```
+
+### Problèmes d'espace disque
+
+#### ❌ Espace insuffisant
+**Symptôme** : "Espace disque insuffisant"
+```bash
+# Vérifier l'espace disponible
+df -h
+
+# Nettoyer les fichiers temporaires
+sudo apt autoclean
+sudo apt autoremove
+
+# Analyser l'utilisation
+du -sh /var/www/html/*
+```
+
+### Problèmes de serveur web
+
+#### ❌ Apache mod_rewrite manquant
+```bash
+# Activer mod_rewrite
+sudo a2enmod rewrite
+sudo systemctl restart apache2
+```
+
+#### ❌ Configuration Nginx manquante
+```nginx
+# /etc/nginx/sites-available/n3xtweb
+server {
+    listen 80;
+    server_name votre-domaine.com;
+    root /var/www/html;
+    index index.php index.html;
+    
+    location / {
+        try_files $uri $uri/ /index.php?$query_string;
+    }
+    
+    location ~ \.php$ {
+        fastcgi_pass unix:/var/run/php/php8.1-fpm.sock;
+        fastcgi_index index.php;
+        include fastcgi_params;
+        fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+    }
+}
+```
+
+## 📋 Checklist de pré-installation
+
+### Avant de commencer
+- [ ] **Serveur web configuré** (Apache/Nginx)
+- [ ] **PHP 7.4+ installé** avec toutes les extensions
+- [ ] **MySQL/MariaDB configuré** avec base et utilisateur
+- [ ] **Permissions correctes** sur les dossiers
+- [ ] **Espace disque suffisant** (minimum 100MB)
+
+### Vérifications automatiques
+- [ ] **Version PHP** >= 7.4.0
+- [ ] **Extension mysqli** pour MySQL
+- [ ] **Extension json** pour JSON
+- [ ] **Extension mbstring** pour UTF-8
+- [ ] **Extension curl** pour HTTP
+- [ ] **Extension openssl** pour SSL
+- [ ] **Extension gd** pour images
+- [ ] **Dossier config/** accessible en écriture
+- [ ] **Dossier uploads/** accessible en écriture
+- [ ] **Dossier logs/** accessible en écriture
+- [ ] **Dossier backups/** accessible en écriture
+- [ ] **Template config.template.php** présent
+- [ ] **Espace disque** >= 100MB
+- [ ] **Connexion base de données** fonctionnelle
+
+## 🎯 Résolution de problèmes par environnement
+
+### Hébergement mutualisé
+- **Limitations** : Pas d'accès SSH, configuration PHP limitée
+- **Solutions** : Contacter l'hébergeur pour les extensions manquantes
+- **Permissions** : Utiliser le gestionnaire de fichiers ou FTP
+
+### VPS/Serveur dédié
+- **Avantages** : Contrôle total de la configuration
+- **Responsabilités** : Installation et maintenance complètes
+- **Outils** : SSH, gestionnaires de paquets
+
+### Docker/Conteneurs
+```dockerfile
+# Dockerfile exemple pour N3XT WEB
+FROM php:8.1-apache
+
+# Installer les extensions requises
+RUN docker-php-ext-install mysqli json mbstring curl openssl gd
+
+# Configurer Apache
+RUN a2enmod rewrite
+
+# Copier les fichiers
+COPY . /var/www/html/
+
+# Permissions
+RUN chown -R www-data:www-data /var/www/html/
+```
+
+## 📞 Support et ressources
+
+### En cas de problème persistant
+1. **Vérifier les logs** : `/logs/install.log`, `/var/log/apache2/error.log`
+2. **Consulter la documentation** du serveur web et PHP
+3. **Contacter l'hébergeur** pour l'assistance technique
+4. **Forum communautaire** : Partager les messages d'erreur complets
+
+### Informations utiles pour le support
+- Version PHP : `php -v`
+- Extensions chargées : `php -m`
+- Configuration serveur : `phpinfo()`
+- Logs d'erreur : Dernières lignes des fichiers de log
 
 ## Widgets disponibles
 
