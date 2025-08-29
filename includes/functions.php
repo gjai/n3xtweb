@@ -330,8 +330,11 @@ class Security {
     public static function validatePasswordStrength($password) {
         $errors = [];
         
-        if (strlen($password) < PASSWORD_MIN_LENGTH) {
-            $errors[] = "Password must be at least " . PASSWORD_MIN_LENGTH . " characters long";
+        // Get minimum password length with fallback for installation
+        $minLength = defined('PASSWORD_MIN_LENGTH') ? PASSWORD_MIN_LENGTH : 8;
+        
+        if (strlen($password) < $minLength) {
+            $errors[] = "Password must be at least " . $minLength . " characters long";
         }
         
         if (!preg_match('/[A-Z]/', $password)) {
