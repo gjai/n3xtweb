@@ -67,6 +67,10 @@ class GitHubUpdater {
         if (isset($http_response_header)) {
             $status_line = $http_response_header[0];
             if (strpos($status_line, '200') === false) {
+                // Handle rate limiting more gracefully
+                if (strpos($status_line, '403') !== false && strpos($status_line, 'rate limit') !== false) {
+                    throw new Exception('Limite de débit GitHub atteinte. Veuillez réessayer dans quelques minutes. Les vérifications automatiques de mise à jour sont temporairement suspendues.');
+                }
                 throw new Exception('Erreur HTTP lors de la récupération des données GitHub: ' . $status_line);
             }
         }

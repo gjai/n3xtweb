@@ -1521,6 +1521,27 @@ class InstallHelper {
             }
         }
         
+        // Remove documentation markdown files for security and cleanliness
+        $rootPath = __DIR__ . '/..';
+        $mdFiles = [
+            'README.md',
+            'OPTIMIZATION_REPORT.md', 
+            'INSTALL_IMPROVEMENTS.md',
+            'SECURITY_MONITORING_GUIDE.md',
+            'CHANGELOG.md'
+        ];
+        
+        foreach ($mdFiles as $mdFile) {
+            $filePath = $rootPath . '/' . $mdFile;
+            if (file_exists($filePath)) {
+                if (!unlink($filePath)) {
+                    $errors[] = "Failed to remove $mdFile";
+                } else {
+                    Logger::log("Documentation file $mdFile removed successfully", LOG_LEVEL_INFO, 'install');
+                }
+            }
+        }
+        
         return ['success' => empty($errors), 'errors' => $errors];
     }
     
