@@ -1,9 +1,9 @@
 <?php
 /**
- * N3XT WEB - Configuration Template
+ * N3XT WEB - Minimal Configuration
  * 
- * This file contains database and system configuration settings.
- * Values are replaced during installation.
+ * This file contains only essential database connection settings.
+ * All other configuration is stored in the database and managed through the back office.
  */
 
 // Prevent direct access
@@ -11,68 +11,79 @@ if (!defined('IN_N3XTWEB')) {
     exit('Direct access not allowed');
 }
 
-// Database Configuration
+// Essential Database Configuration - Only these settings are stored in files
 // WARNING: Change these default values during installation!
-// These are template values and should not be used in production
 define('DB_HOST', 'nxtxyzylie618.mysql.db');
 define('DB_NAME', 'nxtxyzylie618_db');
 define('DB_USER', 'nxtxyzylie618_user');
 define('DB_PASS', 'secure_password'); // CHANGE THIS PASSWORD!
 define('DB_CHARSET', 'utf8mb4');
 
-// Table Prefix
+// Table Prefix - Essential for database operations
 define('TABLE_PREFIX', 'n3xtweb_');
 
-// System Configuration
+// Load the database-driven configuration system
+require_once dirname(__DIR__) . '/includes/Configuration.php';
+
+// Define dynamic constants based on database configuration for backward compatibility
+// These will be loaded from database or use sensible defaults
+
+// System paths - these are filesystem dependent
 define('ROOT_PATH', dirname(__DIR__));
 define('LOG_PATH', ROOT_PATH . '/logs');
 define('BACKUP_PATH', ROOT_PATH . '/backups');
 define('UPLOAD_PATH', ROOT_PATH . '/uploads');
 
-// Admin Configuration
-define('ADMIN_PATH', ROOT_PATH . '/admin');
+// Try to set admin path from database or use fallback
+$admin_path = Configuration::get('admin_path', ROOT_PATH . '/admin');
+if (!defined('ADMIN_PATH')) {
+    define('ADMIN_PATH', $admin_path);
+}
+
+// Load all other configuration from database with backward compatibility constants
+$config = Configuration::getInstance();
 
 // System Settings
-define('MAINTENANCE_MODE', false);
-define('SYSTEM_VERSION', '2.0.0');
+if (!defined('MAINTENANCE_MODE')) define('MAINTENANCE_MODE', Configuration::get('maintenance_mode', false));
+if (!defined('SYSTEM_VERSION')) define('SYSTEM_VERSION', Configuration::get('system_version', '2.0.0'));
 
 // GitHub Integration
-define('GITHUB_OWNER', 'gjai');
-define('GITHUB_REPO', 'n3xtweb');
-define('GITHUB_API_URL', 'https://api.github.com');
+if (!defined('GITHUB_OWNER')) define('GITHUB_OWNER', Configuration::get('github_owner', 'gjai'));
+if (!defined('GITHUB_REPO')) define('GITHUB_REPO', Configuration::get('github_repo', 'n3xtweb'));
+if (!defined('GITHUB_API_URL')) define('GITHUB_API_URL', Configuration::get('github_api_url', 'https://api.github.com'));
 
 // Security Settings
-define('CSRF_TOKEN_LIFETIME', 3600); // 1 hour
-define('SESSION_LIFETIME', 86400); // 24 hours
-define('ADMIN_SESSION_TIMEOUT', 14400); // 4 hours for admin sessions
-define('MAX_LOGIN_ATTEMPTS', 5);
-define('LOGIN_LOCKOUT_TIME', 900); // 15 minutes
-define('PASSWORD_MIN_LENGTH', 8);
+if (!defined('CSRF_TOKEN_LIFETIME')) define('CSRF_TOKEN_LIFETIME', Configuration::get('csrf_token_lifetime', 3600));
+if (!defined('SESSION_LIFETIME')) define('SESSION_LIFETIME', Configuration::get('session_lifetime', 86400));
+if (!defined('ADMIN_SESSION_TIMEOUT')) define('ADMIN_SESSION_TIMEOUT', Configuration::get('admin_session_timeout', 14400));
+if (!defined('MAX_LOGIN_ATTEMPTS')) define('MAX_LOGIN_ATTEMPTS', Configuration::get('max_login_attempts', 5));
+if (!defined('LOGIN_LOCKOUT_TIME')) define('LOGIN_LOCKOUT_TIME', Configuration::get('login_lockout_time', 900));
+if (!defined('PASSWORD_MIN_LENGTH')) define('PASSWORD_MIN_LENGTH', Configuration::get('password_min_length', 8));
 
 // Performance Settings
-define('ENABLE_CACHING', true);
-define('CACHE_TTL_DEFAULT', 3600); // 1 hour
-define('CACHE_TTL_QUERIES', 300); // 5 minutes
-define('ENABLE_GZIP', true);
-define('ENABLE_ASSET_OPTIMIZATION', true);
+if (!defined('ENABLE_CACHING')) define('ENABLE_CACHING', Configuration::get('enable_caching', true));
+if (!defined('CACHE_TTL_DEFAULT')) define('CACHE_TTL_DEFAULT', Configuration::get('cache_ttl_default', 3600));
+if (!defined('CACHE_TTL_QUERIES')) define('CACHE_TTL_QUERIES', Configuration::get('cache_ttl_queries', 300));
+if (!defined('ENABLE_GZIP')) define('ENABLE_GZIP', Configuration::get('enable_gzip', true));
+if (!defined('ENABLE_ASSET_OPTIMIZATION')) define('ENABLE_ASSET_OPTIMIZATION', Configuration::get('enable_asset_optimization', true));
 
-// Debug Settings (disable in production)
-define('DEBUG', false);
-define('ENABLE_ERROR_DISPLAY', false);
-define('LOG_QUERIES', false);
+// Debug Settings
+if (!defined('DEBUG')) define('DEBUG', Configuration::get('debug', false));
+if (!defined('ENABLE_ERROR_DISPLAY')) define('ENABLE_ERROR_DISPLAY', Configuration::get('enable_error_display', false));
+if (!defined('LOG_QUERIES')) define('LOG_QUERIES', Configuration::get('log_queries', false));
 
 // Security Features
-define('ENABLE_CAPTCHA', false);
-define('ENABLE_LOGIN_ATTEMPTS_LIMIT', true);
-define('ENABLE_IP_BLOCKING', true);
-define('ENABLE_IP_TRACKING', true);
-define('ENABLE_DATABASE_LOGGING', true);
-define('ENABLE_SECURITY_HEADERS', true);
+if (!defined('ENABLE_CAPTCHA')) define('ENABLE_CAPTCHA', Configuration::get('enable_captcha', false));
+if (!defined('ENABLE_LOGIN_ATTEMPTS_LIMIT')) define('ENABLE_LOGIN_ATTEMPTS_LIMIT', Configuration::get('enable_login_attempts_limit', true));
+if (!defined('ENABLE_IP_BLOCKING')) define('ENABLE_IP_BLOCKING', Configuration::get('enable_ip_blocking', true));
+if (!defined('ENABLE_IP_TRACKING')) define('ENABLE_IP_TRACKING', Configuration::get('enable_ip_tracking', true));
+if (!defined('ENABLE_DATABASE_LOGGING')) define('ENABLE_DATABASE_LOGGING', Configuration::get('enable_database_logging', true));
+if (!defined('ENABLE_SECURITY_HEADERS')) define('ENABLE_SECURITY_HEADERS', Configuration::get('enable_security_headers', true));
 
-// Email Configuration (optional)
-define('SMTP_HOST', '');
-define('SMTP_PORT', 587);
-define('SMTP_USER', '');
-define('SMTP_PASS', '');
-define('SMTP_FROM', '');
-define('SMTP_FROM_NAME', 'N3XT WEB');
+// Email Configuration
+if (!defined('SMTP_HOST')) define('SMTP_HOST', Configuration::get('smtp_host', ''));
+if (!defined('SMTP_PORT')) define('SMTP_PORT', Configuration::get('smtp_port', 587));
+if (!defined('SMTP_USER')) define('SMTP_USER', Configuration::get('smtp_user', ''));
+if (!defined('SMTP_PASS')) define('SMTP_PASS', Configuration::get('smtp_pass', ''));
+if (!defined('SMTP_FROM')) define('SMTP_FROM', Configuration::get('smtp_from', ''));
+if (!defined('SMTP_FROM_NAME')) define('SMTP_FROM_NAME', Configuration::get('smtp_from_name', 'N3XT WEB'));
