@@ -20,8 +20,8 @@ session_start();
 if (file_exists('config/config.php')) {
     $config = include 'config/config.php';
     if (defined('DB_HOST') && !(DB_HOST === 'nxtxyzylie618.mysql.db' && DB_NAME === 'nxtxyzylie618_db' && DB_USER === 'nxtxyzylie618_user')) {
-        // Find the admin directory
-        $adminDir = 'admin';
+        // Find the back office directory
+        $adminDir = 'bo'; // Default fallback
         if (isset($_SESSION['bo_directory']) && file_exists($_SESSION['bo_directory'])) {
             $adminDir = $_SESSION['bo_directory'];
         }
@@ -75,13 +75,35 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             break;
             
         case 3:
-            // Email verification
+            // Admin information and email verification
             if (isset($_POST['send_code'])) {
                 $email = Security::sanitizeInput($_POST['email']);
-                if (Security::validateEmail($email)) {
+                $login = Security::sanitizeInput($_POST['login']);
+                $firstName = Security::sanitizeInput($_POST['first_name']);
+                $lastName = Security::sanitizeInput($_POST['last_name']);
+                
+                // Validate all fields
+                $errors = [];
+                if (!Security::validateEmail($email)) {
+                    $errors[] = 'Invalid email address format.';
+                }
+                if (empty($login) || strlen($login) < 3) {
+                    $errors[] = 'Login must be at least 3 characters long.';
+                }
+                if (empty($firstName) || strlen($firstName) < 2) {
+                    $errors[] = 'First name must be at least 2 characters long.';
+                }
+                if (empty($lastName) || strlen($lastName) < 2) {
+                    $errors[] = 'Last name must be at least 2 characters long.';
+                }
+                
+                if (empty($errors)) {
                     $code = EmailHelper::generateVerificationCode();
                     $_SESSION['verification_code'] = $code;
                     $_SESSION['verification_email'] = $email;
+                    $_SESSION['admin_login'] = $login;
+                    $_SESSION['admin_first_name'] = $firstName;
+                    $_SESSION['admin_last_name'] = $lastName;
                     $_SESSION['verification_time'] = time();
                     
                     // In test mode or if email fails, show the code for testing
@@ -92,7 +114,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         $success = LanguageHelper::get('email_sent', $language) . " (Test mode - Code: {$code})";
                     }
                 } else {
-                    $error = 'Invalid email address.';
+                    $error = implode(' ', $errors);
                 }
             } elseif (isset($_POST['verify_code'])) {
                 $inputCode = Security::sanitizeInput($_POST['verification_code']);
@@ -139,11 +161,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             break;
             
         case 5:
-            // Admin setup
-            $adminUser = Security::sanitizeInput($_POST['admin_user']);
+            // Installation completion - use data from session
             $email = $_SESSION['verification_email'];
+            $adminUser = $_SESSION['admin_login'];
+            $firstName = $_SESSION['admin_first_name'];
+            $lastName = $_SESSION['admin_last_name'];
             
-            if (!empty($adminUser) && !empty($email)) {
+            if (!empty($adminUser) && !empty($email) && !empty($firstName) && !empty($lastName)) {
                 // Generate admin password
                 $adminPassword = InstallHelper::generateAdminPassword();
                 
@@ -153,8 +177,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 // Create database tables with prefix
                 try {
                     $dbConfig = $_SESSION['db_config'];
-                    createDatabaseTables($dbConfig);
-                    createAdminUser($dbConfig, $adminUser, $adminPassword);
+                    createDatabaseTables($dbConfig, $language);
+                    createAdminUser($dbConfig, $adminUser, $adminPassword, $email, $firstName, $lastName, $language);
                     
                     // Create config file
                     $configContent = generateConfigFile($dbConfig, $boDirectory);
@@ -172,11 +196,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         }
                         
                         // Send admin credentials email
-                        EmailHelper::sendAdminCredentials($email, $adminUser, $adminPassword, $boDirectory, $language);
+                        EmailHelper::sendAdminCredentials($email, $adminUser, $adminPassword, $boDirectory, $language, $firstName, $lastName);
                         
                         // Store BO directory in session
                         $_SESSION['bo_directory'] = $boDirectory;
                         $_SESSION['admin_username'] = $adminUser;
+                        
+                        // Log successful installation
+                        Logger::log("Installation completed successfully for admin: {$firstName} {$lastName} ({$adminUser})", LOG_LEVEL_INFO, 'install');
                         
                         // Auto-remove install.php for security
                         try {
@@ -194,9 +221,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     }
                 } catch (Exception $e) {
                     $error = 'Installation failed: ' . $e->getMessage();
+                    Logger::log('Installation failed: ' . $e->getMessage(), LOG_LEVEL_ERROR, 'install');
                 }
             } else {
-                $error = 'Please provide a valid username.';
+                $error = 'Missing admin information. Please restart installation.';
             }
             break;
     }
@@ -224,7 +252,7 @@ function generateConfigFile($dbConfig, $boDirectory) {
 /**
  * Create database tables with prefix support
  */
-function createDatabaseTables($dbConfig) {
+function createDatabaseTables($dbConfig, $language = 'fr') {
     $dsn = "mysql:host={$dbConfig['host']};dbname={$dbConfig['name']};charset=utf8mb4";
     $pdo = new PDO($dsn, $dbConfig['user'], $dbConfig['pass'], [
         PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION
@@ -239,6 +267,9 @@ function createDatabaseTables($dbConfig) {
             username VARCHAR(50) UNIQUE NOT NULL,
             password_hash VARCHAR(255) NOT NULL,
             email VARCHAR(255) NOT NULL,
+            first_name VARCHAR(100) NOT NULL,
+            last_name VARCHAR(100) NOT NULL,
+            language VARCHAR(2) DEFAULT 'fr',
             reset_token VARCHAR(64) NULL,
             reset_token_expiry TIMESTAMP NULL,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -302,11 +333,12 @@ function createDatabaseTables($dbConfig) {
         ['system_version', SYSTEM_VERSION],
         ['install_date', date('Y-m-d H:i:s')],
         ['table_prefix', $prefix],
+        ['system_language', $language], // Store chosen language as system default
         ['root_path', dirname(__DIR__)],
         ['log_path', dirname(__DIR__) . '/logs'],
         ['backup_path', dirname(__DIR__) . '/backups'],
         ['upload_path', dirname(__DIR__) . '/uploads'],
-        ['admin_path', dirname(__DIR__) . '/admin'],
+        ['admin_path', dirname(__DIR__) . '/bo'], // Will be updated after BO directory creation
         
         // Security Settings
         ['csrf_token_lifetime', '3600'],
@@ -376,7 +408,7 @@ function createDatabaseTables($dbConfig) {
 /**
  * Create admin user
  */
-function createAdminUser($dbConfig, $username, $password) {
+function createAdminUser($dbConfig, $username, $password, $email, $firstName, $lastName, $language) {
     $dsn = "mysql:host={$dbConfig['host']};dbname={$dbConfig['name']};charset=utf8mb4";
     $pdo = new PDO($dsn, $dbConfig['user'], $dbConfig['pass'], [
         PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION
@@ -384,10 +416,9 @@ function createAdminUser($dbConfig, $username, $password) {
     
     $prefix = $dbConfig['prefix'];
     $passwordHash = Security::hashPassword($password);
-    $email = $_SESSION['verification_email'];
     
-    $stmt = $pdo->prepare("INSERT INTO {$prefix}admin_users (username, password_hash, email) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE password_hash = ?, email = ?");
-    $stmt->execute([$username, $passwordHash, $email, $passwordHash, $email]);
+    $stmt = $pdo->prepare("INSERT INTO {$prefix}admin_users (username, password_hash, email, first_name, last_name, language, created_at) VALUES (?, ?, ?, ?, ?, ?, NOW()) ON DUPLICATE KEY UPDATE password_hash = ?, email = ?, first_name = ?, last_name = ?, language = ?");
+    $stmt->execute([$username, $passwordHash, $email, $firstName, $lastName, $language, $passwordHash, $email, $firstName, $lastName, $language]);
 }
 
 /**
@@ -630,6 +661,41 @@ $allRequirementsMet = !in_array(false, $requirements);
             background: #fff3cd;
             color: #856404;
             border: 2px solid #ffeaa7;
+        }
+        
+        .alert-info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 2px solid #bee5eb;
+        }
+        
+        .summary-card {
+            background: #f8f9fa;
+            border: 2px solid #e9ecef;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 25px;
+        }
+        
+        .summary-card h3 {
+            margin: 0 0 15px 0;
+            color: #495057;
+            font-size: 18px;
+        }
+        
+        .summary-item {
+            padding: 8px 0;
+            border-bottom: 1px solid #dee2e6;
+        }
+        
+        .summary-item:last-child {
+            border-bottom: none;
+        }
+        
+        .summary-item strong {
+            display: inline-block;
+            width: 120px;
+            color: #495057;
         }
         
         .language-selector {
@@ -895,9 +961,9 @@ $allRequirementsMet = !in_array(false, $requirements);
                     <?php endif; ?>
                     
                 <?php elseif ($step == 3): ?>
-                    <!-- Step 3: Email Verification -->
-                    <h2><?php echo LanguageHelper::get('admin_setup', $language); ?></h2>
-                    <p>Please provide your email address for administrator account setup.</p>
+                    <!-- Step 3: Admin Information and Email Verification -->
+                    <h2><?php echo LanguageHelper::get('admin_info_title', $language); ?></h2>
+                    <p><?php echo LanguageHelper::get('admin_info_subtitle', $language); ?></p>
                     
                     <?php if (!isset($_SESSION['verification_code'])): ?>
                         <form method="POST">
@@ -911,6 +977,44 @@ $allRequirementsMet = !in_array(false, $requirements);
                                        class="form-control"
                                        value="<?php echo htmlspecialchars($_POST['email'] ?? ''); ?>"
                                        required>
+                                <div class="form-help"><?php echo LanguageHelper::get('email_help', $language); ?></div>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="login" class="form-label"><?php echo LanguageHelper::get('admin_username', $language); ?></label>
+                                <input type="text" 
+                                       id="login" 
+                                       name="login" 
+                                       class="form-control"
+                                       value="<?php echo htmlspecialchars($_POST['login'] ?? ''); ?>"
+                                       minlength="3"
+                                       pattern="[a-zA-Z0-9_-]+"
+                                       required>
+                                <div class="form-help"><?php echo LanguageHelper::get('login_help', $language); ?></div>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="first_name" class="form-label"><?php echo LanguageHelper::get('first_name', $language); ?></label>
+                                <input type="text" 
+                                       id="first_name" 
+                                       name="first_name" 
+                                       class="form-control"
+                                       value="<?php echo htmlspecialchars($_POST['first_name'] ?? ''); ?>"
+                                       minlength="2"
+                                       required>
+                                <div class="form-help"><?php echo LanguageHelper::get('first_name_help', $language); ?></div>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="last_name" class="form-label"><?php echo LanguageHelper::get('last_name', $language); ?></label>
+                                <input type="text" 
+                                       id="last_name" 
+                                       name="last_name" 
+                                       class="form-control"
+                                       value="<?php echo htmlspecialchars($_POST['last_name'] ?? ''); ?>"
+                                       minlength="2"
+                                       required>
+                                <div class="form-help"><?php echo LanguageHelper::get('last_name_help', $language); ?></div>
                             </div>
                             
                             <div class="btn-row">
@@ -918,7 +1022,7 @@ $allRequirementsMet = !in_array(false, $requirements);
                                     <?php echo LanguageHelper::get('previous', $language); ?>
                                 </button>
                                 <button type="submit" name="send_code" class="btn btn-primary">
-                                    <?php echo LanguageHelper::get('send_code', $language); ?>
+                                    <?php echo LanguageHelper::get('verify_and_continue', $language); ?>
                                 </button>
                             </div>
                         </form>
@@ -973,7 +1077,7 @@ $allRequirementsMet = !in_array(false, $requirements);
                                    id="db_name" 
                                    name="db_name" 
                                    class="form-control"
-                                   value="<?php echo htmlspecialchars($_POST['db_name'] ?? 'nxtxyzylie618_db'); ?>"
+                                   value="<?php echo htmlspecialchars($_POST['db_name'] ?? 'nxtxyzylie618'); ?>"
                                    required>
                         </div>
                         
@@ -983,7 +1087,7 @@ $allRequirementsMet = !in_array(false, $requirements);
                                    id="db_user" 
                                    name="db_user" 
                                    class="form-control"
-                                   value="<?php echo htmlspecialchars($_POST['db_user'] ?? 'nxtxyzylie618_user'); ?>"
+                                   value="<?php echo htmlspecialchars($_POST['db_user'] ?? 'nxtxyzylie618'); ?>"
                                    required>
                         </div>
                         
@@ -1015,26 +1119,34 @@ $allRequirementsMet = !in_array(false, $requirements);
                     </form>
                     
                 <?php elseif ($step == 5): ?>
-                    <!-- Step 5: Admin Account Setup -->
-                    <h2><?php echo LanguageHelper::get('admin_setup', $language); ?></h2>
-                    <p>Choose your administrator username. A secure password will be generated and sent to your email.</p>
+                    <!-- Step 5: Installation Summary and Completion -->
+                    <h2><?php echo LanguageHelper::get('installation_complete', $language); ?></h2>
+                    <p>Review your installation details and complete the setup.</p>
+                    
+                    <div class="summary-card">
+                        <h3>Installation Summary</h3>
+                        <div class="summary-item">
+                            <strong>Admin Email:</strong> <?php echo htmlspecialchars($_SESSION['verification_email']); ?>
+                        </div>
+                        <div class="summary-item">
+                            <strong>Admin Login:</strong> <?php echo htmlspecialchars($_SESSION['admin_login']); ?>
+                        </div>
+                        <div class="summary-item">
+                            <strong>Admin Name:</strong> <?php echo htmlspecialchars($_SESSION['admin_first_name'] . ' ' . $_SESSION['admin_last_name']); ?>
+                        </div>
+                        <div class="summary-item">
+                            <strong>Language:</strong> <?php echo $language === 'fr' ? 'Français' : 'English'; ?>
+                        </div>
+                        <div class="summary-item">
+                            <strong>Database:</strong> <?php echo htmlspecialchars($_SESSION['db_config']['name']); ?>
+                        </div>
+                    </div>
                     
                     <form method="POST">
                         <input type="hidden" name="step" value="5">
                         
-                        <div class="form-group">
-                            <label for="admin_user" class="form-label"><?php echo LanguageHelper::get('admin_username', $language); ?></label>
-                            <input type="text" 
-                                   id="admin_user" 
-                                   name="admin_user" 
-                                   class="form-control"
-                                   value="<?php echo htmlspecialchars($_POST['admin_user'] ?? 'admin'); ?>"
-                                   required>
-                        </div>
-                        
-                        <div class="alert alert-warning">
-                            <strong>📧 Note:</strong> Your admin credentials will be sent to: 
-                            <strong><?php echo htmlspecialchars($_SESSION['verification_email']); ?></strong>
+                        <div class="alert alert-info">
+                            <strong>📧 Note:</strong> Your admin credentials will be sent to your email address after installation.
                         </div>
                         
                         <div class="btn-row">
@@ -1042,7 +1154,7 @@ $allRequirementsMet = !in_array(false, $requirements);
                                 <?php echo LanguageHelper::get('previous', $language); ?>
                             </button>
                             <button type="submit" class="btn btn-primary">
-                                <?php echo LanguageHelper::get('finish', $language); ?>
+                                Complete Installation
                             </button>
                         </div>
                     </form>
@@ -1061,13 +1173,13 @@ $allRequirementsMet = !in_array(false, $requirements);
                         <div class="alert alert-warning">
                             <strong>🔒 Security Information:</strong>
                             <ul style="text-align: left; margin: 10px 0;">
-                                <li>Admin directory: <code><?php echo htmlspecialchars($_SESSION['bo_directory'] ?? 'admin'); ?></code></li>
+                                <li>Back Office directory: <code><?php echo htmlspecialchars($_SESSION['bo_directory'] ?? 'bo'); ?></code></li>
                                 <li>Remove or restrict access to this installation file</li>
                                 <li>Enable HTTPS if possible</li>
                             </ul>
                         </div>
                         
-                        <a href="<?php echo htmlspecialchars($_SESSION['bo_directory'] ?? 'admin'); ?>/login.php" class="btn btn-primary">
+                        <a href="<?php echo htmlspecialchars($_SESSION['bo_directory'] ?? 'bo'); ?>/login.php" class="btn btn-primary">
                             Access Admin Panel
                         </a>
                     </div>
