@@ -360,7 +360,5 @@ if (!function_exists('get_config')) {
     }
 }
 
-// Auto-load configuration on file include
-if (class_exists('Database')) {
-    Configuration::loadConfig();
-}
+// Configuration will be loaded explicitly after Database class is available
+// Removed auto-load to prevent circular dependency issues
