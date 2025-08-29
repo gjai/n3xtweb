@@ -107,6 +107,11 @@ class Configuration {
         }
         
         try {
+            // Check if Database class is available before trying to use it
+            if (!class_exists('Database')) {
+                throw new Exception('Database class not yet available');
+            }
+            
             $db = Database::getInstance();
             $prefix = self::getTablePrefix();
             
