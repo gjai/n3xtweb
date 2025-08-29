@@ -428,6 +428,29 @@ function createDatabaseTables($dbConfig, $language = 'fr') {
     foreach ($settings as $setting) {
         $stmt->execute($setting);
     }
+    
+    // Execute modular schema for module-specific configuration tables
+    $moduleSqlFile = __DIR__ . '/sql/modules_schema.sql';
+    if (file_exists($moduleSqlFile)) {
+        $moduleSql = file_get_contents($moduleSqlFile);
+        if ($moduleSql !== false) {
+            // Replace {prefix} placeholder with actual prefix
+            $moduleSql = str_replace('{prefix}', $prefix, $moduleSql);
+            
+            // Split into individual statements and execute
+            $statements = array_filter(array_map('trim', explode(';', $moduleSql)));
+            foreach ($statements as $statement) {
+                if (!empty($statement) && !preg_match('/^\s*--/', $statement)) {
+                    try {
+                        $pdo->exec($statement);
+                    } catch (PDOException $e) {
+                        // Log the error but continue with installation
+                        error_log("Module schema execution warning: " . $e->getMessage());
+                    }
+                }
+            }
+        }
+    }
 }
 
 /**
